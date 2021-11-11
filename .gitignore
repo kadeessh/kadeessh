@@ -1,0 +1,9 @@
+*.json
+caddy-ssh
+custom-build/
+XDG_DATA_HOME
+3rdparty
+!3rdparty/crypto/ssh
+.DS_Store
+vendor
+dist/

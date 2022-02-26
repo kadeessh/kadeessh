@@ -248,6 +248,57 @@ Reference:
 
 
 </details>
+<details>
+<summary>Shell Session with Authorization Module</summary>
+
+The app provides modular authorization process to control the session authorization based on the session context details. One of the authorization modules provided is `max_session`, which restricts the number of currently active sessions to a certain number. The other one is `public`, which grants access without restriction and is the default if none is provided. Here's an example config of how to restrict the server to authorize only 2 active sessions:
+
+```json
+{
+  "apps": {
+    "ssh": {
+      "grace_period": "2s",
+      "servers": {
+        "srv0": {
+          "address": "tcp/0.0.0.0:2000-2012",
+          "authorize": {
+            "authorizer": "max_session",
+            "max_sessions": 2
+          },
+          "pty": {
+            "pty": "allow"
+          },
+          "configs": [
+            {
+              "config": {
+                "loader": "provided",
+                "no_client_auth": false,
+                "authentication": {
+                  "public_key": {
+                    "providers": {
+                      "os": {}
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "actors": [
+            {
+              "act": {
+                "action": "shell",
+                "shell": "zsh"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+</details>
 
 ## Reference
 

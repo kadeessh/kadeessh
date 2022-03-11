@@ -38,7 +38,7 @@ func (ms *MaxSession) Provision(ctx caddy.Context) error {
 	return nil
 }
 
-func (ms *MaxSession) Authorize(sess session.Session) (DeauthorizeFunc, bool) {
+func (ms *MaxSession) Authorize(sess session.Session) (DeauthorizeFunc, bool, error) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 	if (ms.currentSessionCount + 1) > ms.MaxSessions {
@@ -49,16 +49,15 @@ func (ms *MaxSession) Authorize(sess session.Session) (DeauthorizeFunc, bool) {
 			zap.String("remote_ip", sess.RemoteAddr().String()),
 			zap.String("session_id", sess.Context().Value(ssh.ContextKeySessionID).(string)),
 		)
-		return nil, false
-	} else {
-		ms.logger.Info("session authorized",
-			zap.String("user", sess.User()),
-			zap.String("remote_ip", sess.RemoteAddr().String()),
-			zap.String("session_id", sess.Context().Value(ssh.ContextKeySessionID).(string)),
-			zap.Uint64("active_session_count", ms.increment()),
-		)
-		return ms.deauthorize, true
+		return nil, false, nil
 	}
+	ms.logger.Info("session authorized",
+		zap.String("user", sess.User()),
+		zap.String("remote_ip", sess.RemoteAddr().String()),
+		zap.String("session_id", sess.Context().Value(ssh.ContextKeySessionID).(string)),
+		zap.Uint64("active_session_count", ms.increment()),
+	)
+	return ms.deauthorize, true, nil
 }
 
 func (ms *MaxSession) deauthorize(sess session.Session) error {

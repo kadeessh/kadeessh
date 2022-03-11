@@ -232,11 +232,19 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 			sshsrv.Handle(func(sess ssh.Session) {
 				var deauth authorization.DeauthorizeFunc
 				var ok bool
-				if deauth, ok = srv.authorizer.Authorize(sess); !ok {
+				if deauth, ok, err = srv.authorizer.Authorize(sess); !ok && err == nil {
 					srv.logger.Info("session not authorized",
 						zap.String("user", sess.User()),
 						zap.String("remote_ip", sess.RemoteAddr().String()),
 						zap.String("session_id", sess.Context().Value(ssh.ContextKeySessionID).(string)),
+					)
+					return
+				} else if err != nil {
+					srv.logger.Error("error on session authorization",
+						zap.String("user", sess.User()),
+						zap.String("remote_ip", sess.RemoteAddr().String()),
+						zap.String("session_id", sess.Context().Value(ssh.ContextKeySessionID).(string)),
+						zap.Error(err),
 					)
 					return
 				}

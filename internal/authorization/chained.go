@@ -48,7 +48,7 @@ func (c *Chained) Provision(ctx caddy.Context) error {
 	return nil
 }
 
-func (c *Chained) Authorize(sess session.Session) (DeauthorizeFunc, bool) {
+func (c *Chained) Authorize(sess session.Session) (DeauthorizeFunc, bool, error) {
 
 	deauthors := []DeauthorizeFunc{}
 	authed := true
@@ -61,10 +61,13 @@ func (c *Chained) Authorize(sess session.Session) (DeauthorizeFunc, bool) {
 		deauthors = append([]DeauthorizeFunc{deauth}, deauthors...)
 	}
 	if !authed {
+		var err error
 		for _, deauther := range deauthors {
-			deauther(sess)
+			if perr := deauther(sess); perr != nil {
+				err = multierr.Append(err, perr)
+			}
 		}
-		return nil, authed
+		return nil, authed, err
 	}
 
 	return func(s session.Session) error {
@@ -75,7 +78,8 @@ func (c *Chained) Authorize(sess session.Session) (DeauthorizeFunc, bool) {
 			}
 		}
 		return err
-	}, true
+	}, true, nil
 }
 
 var _ caddy.Provisioner = (*Chained)(nil)
+var _ Authorizer = (*Chained)(nil)

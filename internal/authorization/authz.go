@@ -12,5 +12,5 @@ func init() {
 type DeauthorizeFunc func(session.Session) error
 
 type Authorizer interface {
-	Authorize(session.Session) (DeauthorizeFunc, bool)
+	Authorize(session.Session) (DeauthorizeFunc, bool, error)
 }

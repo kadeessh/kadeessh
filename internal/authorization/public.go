@@ -28,8 +28,8 @@ func (ms *Public) Provision(ctx caddy.Context) error {
 	return nil
 }
 
-func (ms *Public) Authorize(sess session.Session) (DeauthorizeFunc, bool) {
-	return ms.deauthorize, true
+func (ms *Public) Authorize(sess session.Session) (DeauthorizeFunc, bool, error) {
+	return ms.deauthorize, true, nil
 }
 
 func (ms *Public) deauthorize(session.Session) error {

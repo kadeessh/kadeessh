@@ -12,6 +12,7 @@ func init() {
 	caddy.RegisterModule(Allow{})
 }
 
+// Allow is PtyAsker module which always allows the PTY session
 type Allow struct {
 	logger *zap.Logger
 }
@@ -29,11 +30,13 @@ func (Allow) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision sets up the Allow module
 func (e *Allow) Provision(ctx caddy.Context) error {
 	e.logger = ctx.Logger(e)
 	return nil
 }
 
+// Allow always returns true
 func (e Allow) Allow(ctx ssh.Context, pty ssh.Pty) bool {
 	e.logger.Info(
 		"asking for permission",

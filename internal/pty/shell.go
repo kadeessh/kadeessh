@@ -18,10 +18,16 @@ type sshPty interface {
 	Close() error
 }
 
+// Shell is an `ssh.actors` module providing "shell" to a session.
 type Shell struct {
-	Shell    string            `json:"shell"`
-	Env      map[string]string `json:"env,omitempty"`
-	ForcePTY bool              `json:"force_pty,omitempty"`
+	// the shell designated for the session
+	Shell string `json:"shell"`
+
+	// environment variables to be set for the session
+	Env map[string]string `json:"env,omitempty"`
+
+	// whether the server should check for explicit pty request
+	ForcePTY bool `json:"force_pty,omitempty"`
 	logger   *zap.Logger
 }
 
@@ -38,11 +44,13 @@ func (s Shell) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision sets up the Shell module
 func (s *Shell) Provision(ctx caddy.Context) error {
 	s.logger = ctx.Logger(s)
 	return nil
 }
 
+// Handle opens a PTY to run the command
 func (s Shell) Handle(sess session.Session) error {
 	spty, err := s.openPty(sess, sess.Command())
 	if err != nil {

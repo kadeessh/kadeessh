@@ -11,10 +11,12 @@ type group struct {
 	group *user.Group
 }
 
+// Gid returns the group ID as defined by the operating system
 func (g group) Gid() string {
 	return g.group.Gid
 }
 
+// Name returns the group name as defined in the operating system
 func (g group) Name() string {
 	return g.group.Name
 }

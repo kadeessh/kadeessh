@@ -8,13 +8,21 @@ import (
 	"github.com/mohammed90/caddy-ssh/internal/session"
 )
 
+// Actor is a collection of actor matchers and actors of an ssh session
 type Actor struct {
+	// The set of matchers consulted to know whether the Actor should act on a session
 	MatcherSetsRaw RawActorMatcherSet `json:"match,omitempty" caddy:"namespace=ssh.actor_matchers"`
 	matcherSets    ActorMatcherSets   `json:"-"`
 
+	// The actor that shall act on the matched session.
+	// "act": {
+	// 		"action": "<actor name>"
+	// 		... actor config
+	// }
 	ActorRaw json.RawMessage `json:"act,omitempty" caddy:"namespace=ssh.actors inline_key=action"`
 	handler  session.Handler `json:"-"`
 
+	// Whether the session shoul be closed upon execution of the actor
 	Final bool `json:"final,omitempty"`
 }
 
@@ -22,7 +30,7 @@ type Actor struct {
 // take an action on a session
 type ActorList []Actor
 
-// Provision sets up both the matchers and handlers in the routes.
+// Provision sets up both the matchers and handlers in the actors.
 func (routes ActorList) Provision(ctx caddy.Context) error {
 	err := routes.ProvisionMatchers(ctx)
 	if err != nil {

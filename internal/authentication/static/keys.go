@@ -37,6 +37,10 @@ type StaticPublicKeyProvider struct {
 	logger   *zap.Logger
 }
 
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (StaticPublicKeyProvider) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "ssh.authentication.providers.public_key.static",

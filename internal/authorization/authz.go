@@ -13,6 +13,8 @@ const NamespacePrefix = "ssh.session.authorizers"
 
 type DeauthorizeFunc func(session.Session) error
 
+// Authorizer interface is the basis for authorizers in the namespace ssh.session.authorizers. An erroed
+// authorization should not require a call to DeauthorizeFunc.
 type Authorizer interface {
 	Authorize(session.Session) (DeauthorizeFunc, bool, error)
 }

@@ -22,6 +22,8 @@ type deauthor struct {
 
 // Chained is a multi-authorizer module that authorizes a session against multiple authorizers
 type Chained struct {
+	// The list of sub-authorizers to loop through to authorize a session. If an authorizer in the chain
+	// fails, all the preiovusly successful authorization will be de-authorized.
 	AuthorizersRaw []json.RawMessage `json:"authorize,omitempty" caddy:"namespace=ssh.session.authorizers inline_key=authorizer"`
 	authorizers    []Authorizer
 	logger         *zap.Logger

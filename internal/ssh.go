@@ -27,9 +27,13 @@ type caddySshServerCtxKey string
 
 const CtxServerName caddySshServerCtxKey = "CtxServerName"
 
-// SSH provides Public Key Infrastructure facilities for Caddy.
+// SSH is the app providing ssh services
 type SSH struct {
-	GracePeriod   caddy.Duration     `json:"grace_period,omitempty"`
+	// GracePeriod is the duration a server should wait for open connections to close during shutdown
+	// before closing them forcefully
+	GracePeriod caddy.Duration `json:"grace_period,omitempty"`
+
+	// The set of ssh servers keyed by custom names
 	Servers       map[string]*Server `json:"servers,omitempty"`
 	servers       []*sshServer
 	serverIndexer map[string][]int // maps server name to the indices in the `servers` field
@@ -43,28 +47,63 @@ type sshServer struct {
 }
 
 type Server struct {
+	// Socket addresses to which to bind listeners. Accepts
+	// [network addresses](/docs/conventions#network-addresses)
+	// that may include port ranges. Listener addresses must
+	// be unique; they cannot be repeated across all defined
+	// servers. TCP is the only acceptable network (for now, perhaps).
 	Address string `json:"address,omitempty"`
 
+	// The configuration of local-forward permission module. The config structure is:
+	// "localforward": {
+	// 		"forward": "<module name>"
+	// 		... config
+	// }
+	// defaults to: { "forward": "deny" }
 	LocalForwardRaw json.RawMessage                  `json:"localforward,omitempty" caddy:"namespace=ssh.ask.localforward inline_key=forward"`
 	localForward    localforward.PortForwardingAsker `json:"-"`
 
+	// The configuration of reverse-forward permission module. The config structure is:
+	// "reverseforward": {
+	// 		"forward": "<module name>"
+	// 		... config
+	// }
+	// defaults to: { "reverseforward": "deny" }
 	ReverseForwardRaw json.RawMessage                    `json:"reverseforward,omitempty" caddy:"namespace=ssh.ask.reverseforward inline_key=forward"`
 	reverseForward    reverseforward.PortForwardingAsker `json:"-"`
 
+	// The configuration of PTY permission module. The config structure is:
+	// "pty": {
+	// 		"pty": "<module name>"
+	// 		... config
+	// }
+	// defaults to: { "forward": "deny" }
 	PtyAskRaw json.RawMessage   `json:"pty,omitempty" caddy:"namespace=ssh.ask.pty inline_key=pty"`
 	ptyAsk    caddypty.PtyAsker `json:"-"`
 
+	// connection timeout when no activity, none if empty
 	IdleTimeout caddy.Duration `json:"idle_timeout,omitempty"`
-	MaxTimeout  caddy.Duration `json:"max_timeout,omitempty"`
+	// absolute connection timeout, none if empty
+	MaxTimeout caddy.Duration `json:"max_timeout,omitempty"`
 
+	// The configuration of the authorizer module. The config structure is:
+	// "authorize": {
+	// 		"authorizer": "<module name>"
+	// 		... config
+	// }
+	// default to: { "authorizer": "public" }.
 	AuthorizeRaw json.RawMessage `json:"authorize,omitempty" caddy:"namespace=ssh.session.authorizers inline_key=authorizer"`
 	authorizer   authorization.Authorizer
 
+	// The list of defined subsystems in a json structure keyed by the arbitrary name of the subsystem.
+	// TODO: The current implementation is naive and can be expanded to follow the Authorzation and Actors model
 	SubsystemRaw caddy.ModuleMap              `json:"subsystems,omitempty" caddy:"namespace=ssh.subsystem"`
 	subsystems   map[string]subsystem.Handler `json:"-"`
 
+	// List of configurators that could configure the server per matchers and config providers
 	Config ConfigList `json:"configs,omitempty"`
 
+	// The actors that can act on a session per the matching criteria
 	Actors ActorList `json:"actors,omitempty"`
 
 	name        string
@@ -72,7 +111,10 @@ type Server struct {
 	logger      *zap.Logger
 }
 
-// CaddyModule returns the Caddy module information.
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (SSH) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "ssh",
@@ -132,7 +174,6 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 			}
 			srv.localForward = lforwarder
 		}
-
 		{
 			// default to disable for strict reasons
 			if srv.ReverseForwardRaw == nil || len(srv.ReverseForwardRaw) == 0 {
@@ -177,7 +218,6 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 				srv.subsystems[modName] = modIface.(subsystem.Handler)
 			}
 		}
-
 		if err := srv.Config.Provision(ctx); err != nil {
 			return err
 		}
@@ -185,7 +225,6 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 		if err := srv.Actors.Provision(ctx); err != nil {
 			return err
 		}
-
 		for portOffset := uint(0); portOffset < srv.listenRange.PortRangeSize(); portOffset++ {
 			sshsrv := &sshServer{
 				Server: &ssh.Server{
@@ -198,13 +237,14 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 					PtyCallback:                   srv.ptyAsk.Allow,
 					ServerConfigCallback: func(ctx ssh.Context) *gossh.ServerConfig {
 						for _, cfger := range srv.Config {
-							if cfger.MatcherSets.AnyMatch(ctx) {
-								return cfger.Configurator.ServerConfigCallback(ctx)
+							if cfger.matcherSets.AnyMatch(ctx) {
+								return cfger.configurator.ServerConfigCallback(ctx)
 							}
 						}
 						return &gossh.ServerConfig{}
 					},
-				}}
+				},
+			}
 			if srv.localForward != nil || srv.reverseForward != nil {
 				forwardHandler := &ssh.ForwardedTCPHandler{}
 				if sshsrv.RequestHandlers == nil {
@@ -219,7 +259,6 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 				sshsrv.RequestHandlers["cancel-tcpip-forward"] = forwardHandler.HandleSSHRequest
 				sshsrv.ChannelHandlers["direct-tcpip"] = ssh.DirectTCPIPHandler
 			}
-
 			if len(srv.subsystems) > 0 {
 				sshsrv.SubsystemHandlers = make(map[string]ssh.SubsystemHandler)
 			}
@@ -228,7 +267,6 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 					hndler.Handle(s)
 				}
 			}
-
 			sshsrv.Handle(func(sess ssh.Session) {
 				var deauth authorization.DeauthorizeFunc
 				var ok bool

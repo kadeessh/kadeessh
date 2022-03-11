@@ -10,7 +10,10 @@ import (
 	"go.uber.org/zap"
 )
 
+// MaxSession is an authorizer that permits sessions so long as the
+// number of active sessions is below the specified maximum.
 type MaxSession struct {
+	// The maximum number of active sessions
 	MaxSessions uint64 `json:"max_sessions,omitempty"`
 
 	mu                  *sync.Mutex
@@ -32,12 +35,15 @@ func (ms *MaxSession) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision sets up the MaxSession authorizer
 func (ms *MaxSession) Provision(ctx caddy.Context) error {
 	ms.logger = ctx.Logger(ms)
 	ms.mu = &sync.Mutex{}
 	return nil
 }
 
+// Authorize validates the current count of active sessions and issues an authorization if
+// the addition of new session does not exceed the defined maximum number of allowed sessions.
 func (ms *MaxSession) Authorize(sess session.Session) (DeauthorizeFunc, bool, error) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()

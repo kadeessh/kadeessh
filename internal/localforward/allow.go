@@ -12,6 +12,7 @@ func init() {
 	caddy.RegisterModule(Allow{})
 }
 
+// Allow is PortForwardingAsker module which always allows the session
 type Allow struct {
 	logger *zap.Logger
 }
@@ -29,11 +30,13 @@ func (Allow) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision sets up the Allow module
 func (e *Allow) Provision(ctx caddy.Context) error {
 	e.logger = ctx.Logger(e)
 	return nil
 }
 
+// Allow always returns true
 func (e Allow) Allow(ctx ssh.Context, destinationHost string, destinationPort uint32) bool {
 	e.logger.Info(
 		"asking for permission",

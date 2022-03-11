@@ -13,15 +13,20 @@ func init() {
 	caddy.RegisterModule(InteractiveFlow{})
 }
 
+// InteractiveFlow holds the interactive authentication providers
 type InteractiveFlow struct {
 	authenticatorLogger
-	// A set of authentication providers. If none are specified,
+	// A set of authentication providers implementing the UserInteractiveAuthenticator interface. If none are specified,
 	// all requests will always be unauthenticated.
 	ProvidersRaw caddy.ModuleMap                         `json:"providers,omitempty" caddy:"namespace=ssh.providers.interactive"`
 	providers    map[string]UserInteractiveAuthenticator `json:"-"`
 	logger       *zap.Logger
 }
 
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (upf InteractiveFlow) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID: "ssh.authentication.flows.interactive",
@@ -31,6 +36,7 @@ func (upf InteractiveFlow) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision sets up and loads the providers of conforming to UserInteractiveAuthenticator interface
 func (upf *InteractiveFlow) Provision(ctx caddy.Context) error {
 	upf.logger = ctx.Logger(upf)
 	upf.authenticatorLogger = authenticatorLogger{upf.logger}

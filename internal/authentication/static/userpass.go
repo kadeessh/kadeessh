@@ -33,6 +33,10 @@ type Static struct {
 	logger *zap.Logger
 }
 
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (Static) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "ssh.authentication.providers.password.static",

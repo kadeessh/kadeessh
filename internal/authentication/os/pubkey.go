@@ -23,10 +23,16 @@ func init() {
 	caddy.RegisterModule(PublicKey{})
 }
 
+// PublicKey is an authenticator that authenticates the user based on the `.ssh/authorized_keys` in
+// the user's $HOME
 type PublicKey struct {
 	logger *zap.Logger
 }
 
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (PublicKey) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "ssh.authentication.providers.public_key.os",
@@ -34,11 +40,14 @@ func (PublicKey) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision sets up the PublicKey authentication module
 func (o *PublicKey) Provision(ctx caddy.Context) error {
 	o.logger = ctx.Logger(o)
 	return nil
 }
 
+// AuthenticateUser loads the $HOME`/.ssh/authorized_keys` of the user to look for a matching key. The user is denied
+// if none of the list of keys in `authorized_keys` match the submitted keys.
 func (o *PublicKey) AuthenticateUser(ctx session.ConnMetadata, pubkey gossh.PublicKey) (authentication.User, bool, error) {
 	username := ctx.User()
 	u, err := user.Lookup(username)

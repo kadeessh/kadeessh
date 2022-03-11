@@ -9,6 +9,7 @@ func init() {
 	caddy.RegisterModule(new(Public))
 }
 
+// Public authorizes all sessions
 type Public struct{}
 
 // This method indicates that the type is a Caddy
@@ -24,10 +25,12 @@ func (ms *Public) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision is an noop for this module
 func (ms *Public) Provision(ctx caddy.Context) error {
 	return nil
 }
 
+// Authorize is an noop for this module
 func (ms *Public) Authorize(sess session.Session) (DeauthorizeFunc, bool, error) {
 	return ms.deauthorize, true, nil
 }

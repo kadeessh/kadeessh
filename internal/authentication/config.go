@@ -6,6 +6,8 @@ import (
 	gossh "golang.org/x/crypto/ssh"
 )
 
+// Config holds the configuration of the various authentication flows, including
+// allow/deny users/groups.
 type Config struct {
 	AllowUsers  []string        `json:"allow_users,omitempty"`
 	allowUsers  map[string]bool `json:"-"`
@@ -16,11 +18,20 @@ type Config struct {
 	DenyGroups  []string        `json:"deny_groups,omitempty"`
 	denyGroups  map[string]bool `json:"-"`
 
+	// UsernamePassword holds the configuration of the password-based
+	// authentication flow. nil value disables the authentication flow.
 	UsernamePassword *PasswordAuthFlow `json:"username_password,omitempty"`
-	PublicKey        *PublicKeyFlow    `json:"public_key,omitempty"`
-	Interactive      *InteractiveFlow  `json:"interactive,omitempty"`
+
+	// PublicKey holds the configuration of the public-key-based
+	// authentication flow. nil value disables the authentication flow.
+	PublicKey *PublicKeyFlow `json:"public_key,omitempty"`
+
+	// Interactive holds the configuration of the interactive-based
+	// authentication flow. nil value disables the authentication flow.
+	Interactive *InteractiveFlow `json:"interactive,omitempty"`
 }
 
+// Provision sets up the allowed/denied users/groups and provisions the non-nil authentication flows
 func (c *Config) Provision(ctx caddy.Context) error {
 	if c == nil {
 		return nil
@@ -60,6 +71,9 @@ func (c *Config) Provision(ctx caddy.Context) error {
 	return nil
 }
 
+// PasswordCallback returns an authentiction callback conforming to the password callback func needed
+// by ServerConfig of golang.org/x/crypto/ssh. The method returns nil if the field UsernamePassword
+// is nil to disable password authentication.
 func (c Config) PasswordCallback(ctx session.Context) func(conn gossh.ConnMetadata, password []byte) (*gossh.Permissions, error) {
 	if c.UsernamePassword == nil {
 		return nil
@@ -80,6 +94,10 @@ func (c Config) PasswordCallback(ctx session.Context) func(conn gossh.ConnMetada
 		return nil, invalidCredentials
 	}
 }
+
+// PublicKeyCallback returns an authentiction callback conforming to the public key authentication callback func needed
+// by ServerConfig of golang.org/x/crypto/ssh. The method returns nil if the field PublicKey
+// is nil to disable public key authentication.
 func (c Config) PublicKeyCallback(ctx session.Context) func(conn gossh.ConnMetadata, key gossh.PublicKey) (*gossh.Permissions, error) {
 	if c.PublicKey == nil {
 		return nil
@@ -100,6 +118,9 @@ func (c Config) PublicKeyCallback(ctx session.Context) func(conn gossh.ConnMetad
 		return nil, invalidCredentials
 	}
 }
+
+// InteractiveCallback returns an authentiction callback conforming to the interactive authentication callback func needed
+// by ServerConfig of golang.org/x/crypto/ssh. The method returns nil if the field Interactive is nil to disable interactive authentication.
 func (c Config) InteractiveCallback(ctx session.Context) func(conn gossh.ConnMetadata, client gossh.KeyboardInteractiveChallenge) (*gossh.Permissions, error) {
 	if c.Interactive == nil {
 		return nil

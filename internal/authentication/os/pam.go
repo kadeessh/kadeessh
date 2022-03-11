@@ -20,10 +20,15 @@ func init() {
 	caddy.RegisterModule(OS{})
 }
 
+// OS module authenticates the user against the users of the underlying operating system using PAM
 type OS struct {
 	logger *zap.Logger
 }
 
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (OS) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "ssh.authentication.providers.password.os",
@@ -31,11 +36,13 @@ func (OS) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision sets up the module
 func (pm *OS) Provision(ctx caddy.Context) error {
 	pm.logger = ctx.Logger(pm)
 	return nil
 }
 
+// AuthenticateUser uses PAM to authenticate users
 func (pm OS) AuthenticateUser(sshctx session.ConnMetadata, password []byte) (authentication.User, bool, error) {
 	pm.logger.Info("auth begin", zap.String("username", sshctx.User()))
 

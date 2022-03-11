@@ -19,11 +19,16 @@ func init() {
 	caddy.RegisterModule(Static{})
 }
 
+// Keyfile is a holder of the path and passphrase of key files.
 type Keyfile struct {
+	// Path should be an acceptable URL, so for on-disk files
+	// it should be `file:///path/to/file/on/disk`
 	Path       string `json:"path,omitempty"`
 	Passphrase string `json:"passphrase,omitempty"`
 }
 
+// Static is a session signer that uses pre-existing keys, which may be backed
+// as files or retrievable via HTTP
 type Static struct {
 	Keys    []Keyfile `json:"keys,omitempty"`
 	signers []gossh.Signer
@@ -42,6 +47,7 @@ func (s Static) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision loads the keys from the specified URLs
 func (s *Static) Provision(ctx caddy.Context) error {
 	if len(s.Keys) == 0 {
 		return errors.New("path for host key file missing")
@@ -91,6 +97,7 @@ func (s *Static) Provision(ctx caddy.Context) error {
 	return nil
 }
 
+// Configure adds the signers/hostkeys to the session
 func (f *Static) Configure(ctx session.Context, cfg internalcaddyssh.SignerAdder) {
 	for _, v := range f.signers {
 		cfg.AddHostKey(v)

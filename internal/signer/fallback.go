@@ -42,6 +42,7 @@ func (f Fallback) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision sets up the Fallback module by loading the storage module then generating/loading the keys as necessary
 func (f *Fallback) Provision(ctx caddy.Context) error {
 	f.logger = ctx.Logger(f)
 	if f.StorageRaw != nil {
@@ -126,6 +127,7 @@ func (f *Fallback) Provision(ctx caddy.Context) error {
 	return nil
 }
 
+// GoSSHSigner returns the collection of signing keys available in the storage
 func (f *Fallback) GoSSHSigner() []gossh.Signer {
 	keys, err := f.storage.List(filepath.Join("ssh", "signer"), true)
 	if err != nil {
@@ -151,6 +153,7 @@ func (f *Fallback) GoSSHSigner() []gossh.Signer {
 	return signers
 }
 
+// Configure adds the signers/hostkeys to the session
 func (f *Fallback) Configure(ctx session.Context, cfg internalcaddyssh.SignerAdder) {
 	for _, v := range f.signers {
 		cfg.AddHostKey(v)

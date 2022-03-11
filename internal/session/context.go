@@ -11,6 +11,8 @@ import (
 // For compatibility reasons
 var _ ssh.Context = Context(nil)
 
+// ConnMetadata is our own interface compatible with ConnMetadata of github.com/gliderlabs/ssh
+// to define our modules' requirements against an internal interface rather than external
 type Context interface {
 	// ssh.Context
 	context.Context
@@ -41,6 +43,7 @@ type Context interface {
 	SetValue(key, value interface{})
 }
 
+// ConnConfigMatchingContext is an interface of the data available for ConfigMatcher
 type ConnConfigMatchingContext interface {
 	// RemoteAddr returns the net.Addr of the client side of the connection.
 	RemoteAddr() net.Addr
@@ -49,6 +52,7 @@ type ConnConfigMatchingContext interface {
 	LocalAddr() net.Addr
 }
 
+// ActorMatchingContext is an interface of the data available for ActorMatcher
 type ActorMatchingContext interface {
 	// User returns the username used when establishing the SSH connection.
 	User() string

@@ -14,28 +14,45 @@ func init() {
 	caddy.RegisterModule(ProvidedConfig{})
 }
 
+// ServerConfigurator is implemented by config loaders which should produce ServerConfig of golang.org/x/crypto/ssh
+// given a session context
 type ServerConfigurator interface {
 	ServerConfigCallback(session.Context) *gossh.ServerConfig
 }
 
+// SignerAdder interface is an abstraction so signer modules can configure *ServerConfig of golang.org/x/crypto/ssh
+// without having to reference it directly to restrict their manipulation to adding hostkeys
 type SignerAdder interface {
 	AddHostKey(key gossh.Signer)
 }
 
+// SignerConfigurator is the target interface abstraction for signers that load and add keys
+// to a session based on the session context
 type SignerConfigurator interface {
 	Configure(session.Context, SignerAdder)
 }
 
+// Configurator holds the set of matchers and configurators that will apply custom server
+// configurations if matched
 type Configurator struct {
+	// The set of matchers consulted to know whether the Actor should act on a session
 	MatcherSetsRaw RawConfigMatcherSet `json:"match,omitempty" caddy:"namespace=ssh.config_matchers"`
-	MatcherSets    ConfigMatcherSets   `json:"-"`
+	matcherSets    ConfigMatcherSets   `json:"-"`
 
+	// The config provider that shall configure the server for the matched session.
+	// "config": {
+	// 		"loader": "<actor name>"
+	// 		... config loader config
+	// }
 	ConfiguratorRaw json.RawMessage    `json:"config,omitempty" caddy:"namespace=ssh.config.loaders inline_key=loader"`
-	Configurator    ServerConfigurator `json:"-"`
+	configurator    ServerConfigurator `json:"-"`
 }
 
+// ConfigList is a list of server config providers that can
+// custom configure the server based on the session
 type ConfigList []Configurator
 
+// Provision sets up both the matchers and configurators in the configurators.
 func (cl ConfigList) Provision(ctx caddy.Context) error {
 	err := cl.provisionMatchers(ctx)
 	if err != nil {
@@ -55,7 +72,7 @@ func (cl ConfigList) provisionMatchers(ctx caddy.Context) error {
 		if err != nil {
 			return fmt.Errorf("cl %d: loading matcher modules: %v", i, err)
 		}
-		err = cl[i].MatcherSets.FromInterface(matchersIface)
+		err = cl[i].matcherSets.FromInterface(matchersIface)
 		if err != nil {
 			return fmt.Errorf("cl %d: %v", i, err)
 		}
@@ -73,7 +90,7 @@ func (cl ConfigList) provisionConfigurators(ctx caddy.Context) error {
 		if err != nil {
 			return fmt.Errorf("config %d: loading configurator modules: %v", i, err)
 		}
-		cl[i].Configurator = clIface.(ServerConfigurator)
+		cl[i].configurator = clIface.(ServerConfigurator)
 	}
 	return nil
 }
@@ -81,6 +98,12 @@ func (cl ConfigList) provisionConfigurators(ctx caddy.Context) error {
 // Lifted and merged from golang.org/x/crypto/ssh
 // ProvidedConfig holds server specific configuration data.
 type ProvidedConfig struct {
+	// The session signers to be loaded. The field takes the form:
+	// "signer": {
+	// 		"module": "<signer module name>"
+	// 		... signer module config
+	// }
+	// If empty, the default module is "fallback", which will load existing keys, or generates and stores them if non-existent.
 	SignerRaw json.RawMessage `json:"signer,omitempty"  caddy:"namespace=ssh.signers inline_key=module"`
 	signer    SignerConfigurator
 
@@ -119,6 +142,7 @@ type ProvidedConfig struct {
 	// to 6.
 	MaxAuthTries int `json:"max_auth_tries,omitempty"`
 
+	// This holds the authentication suite for the various flows
 	Authentication *authentication.Config `json:"authentication,omitempty"`
 
 	// TODO: perhaps not needed? the authentication middlewares log on their own
@@ -156,6 +180,7 @@ func (pc ProvidedConfig) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision loads and provisions the dynamic modules of the config
 func (c *ProvidedConfig) Provision(ctx caddy.Context) error {
 	if err := c.Authentication.Provision(ctx); err != nil {
 		return err
@@ -180,6 +205,8 @@ func (c *ProvidedConfig) Provision(ctx caddy.Context) error {
 	return nil
 }
 
+// ServerConfigCallback creates and returns ServerConfig of golang.org/x/crypto/ssh. The values
+// are copied from the ProvidedConfig into the ServerConfig
 func (c *ProvidedConfig) ServerConfigCallback(ctx session.Context) *gossh.ServerConfig {
 	cfg := &gossh.ServerConfig{
 		Config: gossh.Config{

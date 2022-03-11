@@ -22,12 +22,18 @@ func init() {
 	caddy.RegisterModule(MatchUser{})
 }
 
+// ActorMatcher is an interface used to check whether an actor should act on the session
 type ActorMatcher interface {
 	ShouldAct(session.ActorMatchingContext) bool
 }
+
+// ActorMatcherSet is a set of matchers which must all match in order for the session to be matched and acted upon.
 type ActorMatcherSet []ActorMatcher
+
+// RawActorMatcherSet is a group of matcher sets in their raw, JSON form.
 type RawActorMatcherSet []caddy.ModuleMap
 
+// ShouldAct returns true if the session matches all matchers in ms or if there are no matchers.
 func (ms ActorMatcherSet) ShouldAct(session session.ActorMatchingContext) bool {
 	for _, m := range ms {
 		if !m.ShouldAct(session) {
@@ -37,14 +43,21 @@ func (ms ActorMatcherSet) ShouldAct(session session.ActorMatchingContext) bool {
 	return true
 }
 
+// ActorMatcherSets is a group of matcher sets capable of checking whether a session matches any of the sets.
 type ActorMatcherSets []ActorMatcherSet
 
+// AnyMatch returns true if session matches any of the matcher sets in ms or if there are no matchers, in which case the request always matches.
 func (ms ActorMatcherSets) AnyMatch(session session.ActorMatchingContext) bool {
 	for _, m := range ms {
 		if m.ShouldAct(session) {
 			return true
 		}
 	}
+	return ms.Empty()
+}
+
+// Empty returns true if the set has no entries
+func (ms ActorMatcherSets) Empty() bool {
 	return len(ms) == 0
 }
 
@@ -73,7 +86,10 @@ type MatchRemoteIP struct {
 	logger *zap.Logger
 }
 
-// CaddyModule returns the Caddy module information.
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (MatchRemoteIP) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "ssh.actor_matchers.remote_ip",
@@ -159,7 +175,10 @@ type MatchNot struct {
 	MatcherSets    []ActorMatcherSet `json:"-"`
 }
 
-// CaddyModule returns the Caddy module information.
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (MatchNot) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "ssh.actor_matchers.not",
@@ -215,7 +234,10 @@ type MatchUser struct {
 	logger *zap.Logger
 }
 
-// CaddyModule returns the Caddy module information.
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (MatchUser) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "ssh.actor_matchers.user",
@@ -246,7 +268,10 @@ type MatchGroup struct {
 	logger *zap.Logger
 }
 
-// CaddyModule returns the Caddy module information.
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (MatchGroup) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "ssh.actor_matchers.group",
@@ -283,6 +308,7 @@ func (m MatchExtension) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// ShouldAct returns true if the requested ssh protocol extension matches any of the listed extensions
 func (m MatchExtension) ShouldAct(ctx session.ActorMatchingContext) bool {
 	// lifted from github.com/caddyserver/caddy/v2/modules/caddyhttp/matchers.go:matchHeaders with modifications
 
@@ -347,6 +373,7 @@ func (m MatchCriticalOption) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// ShouldAct returns true if any of the listed critical-options are in the critical-option of the certificate/user
 func (m MatchCriticalOption) ShouldAct(ctx session.ActorMatchingContext) bool {
 	// lifted from github.com/caddyserver/caddy/v2/modules/caddyhttp/matchers.go:matchHeaders with modifications
 

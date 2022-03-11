@@ -79,6 +79,7 @@ func (s Shell) openPty(sess session.Session, cmd []string) (sshPty, error) {
 	return spty, nil
 }
 
+// Communicate copies the IO across the PTY and the peer
 func (p *caddyPty) Communicate(peer io.ReadWriter) {
 	go func() {
 		io.Copy(p.pty, peer) // stdin
@@ -86,10 +87,12 @@ func (p *caddyPty) Communicate(peer io.ReadWriter) {
 	io.Copy(peer, p.pty) // stdout
 }
 
+// SetWindowsSize updates the window size fo the PTY session
 func (p *caddyPty) SetWindowsSize(h, w int) {
 	pty.Setsize(p.pty, &pty.Winsize{Rows: uint16(h), Cols: uint16(w)}) //nolint
 }
 
+// Close closes the PTY session
 func (p *caddyPty) Close() error {
 	return p.pty.Close()
 }

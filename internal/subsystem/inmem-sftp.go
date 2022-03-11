@@ -34,12 +34,14 @@ type InMemSFTP struct {
 	root   sftp.Handlers
 }
 
+// Provision sets up the in-memory SFTP module
 func (s *InMemSFTP) Provision(ctx caddy.Context) error {
 	s.logger = ctx.Logger(s)
 	s.root = sftp.InMemHandler()
 	return nil
 }
 
+// Handle runs an SFTP request server for the session
 func (s InMemSFTP) Handle(sess session.Session) {
 	s.logger.Info("handling sftp session", zap.String("user", sess.User()), zap.String("remote_addr", sess.RemoteAddr().String()))
 	server := sftp.NewRequestServer(sess, s.root)
@@ -51,6 +53,7 @@ func (s InMemSFTP) Handle(sess session.Session) {
 	}
 }
 
+// Handler is the designated interface which subsystems should implement
 type Handler interface {
 	Handle(session.Session)
 }

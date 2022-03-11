@@ -12,6 +12,7 @@ func init() {
 	caddy.RegisterModule(Deny{})
 }
 
+// Allow is PortForwardingAsker module which always rejects the session
 type Deny struct {
 	logger *zap.Logger
 }
@@ -29,11 +30,13 @@ func (Deny) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision sets up the Deny module
 func (e *Deny) Provision(ctx caddy.Context) error {
 	e.logger = ctx.Logger(e)
 	return nil
 }
 
+// Allow always returns false to deny the local forward session
 func (e Deny) Allow(ctx ssh.Context, destinationHost string, destinationPort uint32) bool {
 	e.logger.Info(
 		"asking for permission",

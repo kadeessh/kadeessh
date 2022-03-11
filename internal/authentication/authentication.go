@@ -15,6 +15,7 @@ var invalidCredentials = errors.New("invalid credentials")
 type ctxKey string
 
 const (
+	// The context key pointing to the authenticated user value
 	UserCtxKey ctxKey = "user"
 )
 
@@ -32,11 +33,13 @@ type Comparer interface {
 	Compare(hashedPassword, plaintextPassword, salt []byte) (bool, error)
 }
 
+// Group is an abstraction of the group of the authenticated user when stored in the session context
 type Group interface {
 	Gid() string
 	Name() string
 }
 
+// User is the type of the authenticated user when stored in the session context
 type User interface {
 	Uid() string
 	Gid() string
@@ -49,10 +52,14 @@ type User interface {
 	Permissions() *gossh.Permissions
 }
 
+// UserPasswordAuthenticator is the interface authentication providers should implement
+// to be used in ssh.authentication.flows.password_auth
 type UserPasswordAuthenticator interface {
 	AuthenticateUser(ctx session.ConnMetadata, password []byte) (User, bool, error)
 }
 
+// UserPublicKeyAuthenticator is the interface authentication providers should implement
+// to be used in ssh.authentication.flows.public_key
 type UserPublicKeyAuthenticator interface {
 	AuthenticateUser(ctx session.ConnMetadata, key gossh.PublicKey) (User, bool, error)
 }
@@ -62,7 +69,8 @@ type UserCertificateAuthenticator interface {
 	AuthenticateUser(ctx session.ConnMetadata, key gossh.PublicKey) (User, bool, error)
 }
 
-// TODO: TBD
+// UserInteractiveAuthenticator is the interface authentication providers should implement
+// to be used in ssh.authentication.flows.interactive
 type UserInteractiveAuthenticator interface {
 	AuthenticateUser(conn session.ConnMetadata, client gossh.KeyboardInteractiveChallenge) (User, bool, error)
 }

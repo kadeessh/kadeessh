@@ -49,14 +49,15 @@ func (c *Chained) Provision(ctx caddy.Context) error {
 }
 
 func (c *Chained) Authorize(sess session.Session) (DeauthorizeFunc, bool, error) {
-
 	deauthors := []DeauthorizeFunc{}
 	authed := true
-
-	for i := 0; authed && i < len(c.authorizers); i++ {
-		deauth, a := c.authorizers[i].Authorize(sess)
-		authed = authed && a
-
+	var err error
+	for i := 0; authed && i < len(c.authorizers) && err == nil; i++ {
+		deauth, a, autherr := c.authorizers[i].Authorize(sess)
+		authed = (authed && a) || autherr != nil
+		if autherr != nil {
+			err = autherr
+		}
 		// prepend
 		deauthors = append([]DeauthorizeFunc{deauth}, deauthors...)
 	}

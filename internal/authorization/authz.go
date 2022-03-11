@@ -9,6 +9,8 @@ func init() {
 	caddy.RegisterModule(new(MaxSession))
 }
 
+const NamespacePrefix = "ssh.session.authorizers"
+
 type DeauthorizeFunc func(session.Session) error
 
 type Authorizer interface {

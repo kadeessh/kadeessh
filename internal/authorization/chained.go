@@ -22,7 +22,7 @@ type deauthor struct {
 
 // Chained is a multi-authorizer module that authorizes a session against multiple authorizers
 type Chained struct {
-	AuthorizersRaw []json.RawMessage `json:"authorize,omitempty" caddy:"namespace=ssh.session.authorize inline_key=authorizer"`
+	AuthorizersRaw []json.RawMessage `json:"authorize,omitempty" caddy:"namespace=ssh.session.authorizers inline_key=authorizer"`
 	authorizers    []Authorizer
 	logger         *zap.Logger
 }
@@ -33,7 +33,7 @@ type Chained struct {
 // must not have any side-effects.
 func (c *Chained) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID: "ssh.session.authorize.chained",
+		ID: NamespacePrefix + ".chained",
 		New: func() caddy.Module {
 			return new(Chained)
 		},

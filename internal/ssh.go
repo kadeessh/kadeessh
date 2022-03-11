@@ -57,7 +57,7 @@ type Server struct {
 	IdleTimeout caddy.Duration `json:"idle_timeout,omitempty"`
 	MaxTimeout  caddy.Duration `json:"max_timeout,omitempty"`
 
-	AuthorizeRaw json.RawMessage `json:"authorize,omitempty" caddy:"namespace=ssh.session.authorize inline_key=authorizer"`
+	AuthorizeRaw json.RawMessage `json:"authorize,omitempty" caddy:"namespace=ssh.session.authorizers inline_key=authorizer"`
 	authorizer   authorization.Authorizer
 
 	SubsystemRaw caddy.ModuleMap              `json:"subsystems,omitempty" caddy:"namespace=ssh.subsystem"`

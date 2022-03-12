@@ -1,6 +1,20 @@
 # Caddy SSH
 
-This is still under heavy WIP.
+_This is still under heavy WIP._
+
+Caddy SSH is an extensible, modular SSH server built as Caddy app. The project aims to provide an ssh server with safe, modern, and secure defaults.
+
+## Install
+
+You start by looking for the binaries in the [GitHub Releases](https://github.com/mohammed90/caddy-ssh/releases) page. Download the executable then place it somewhere in your PATH.
+
+The other way is to build the project using [xcaddy](https://github.com/caddyserver/xcaddy) with the command:
+
+```
+xcaddy build --with github.com/mohammed90/caddy-ssh[@<version>]
+```
+
+where `[@<version>]` is optional and `<version>` may be replaced by the desired version.
 
 ## Sample Config
 

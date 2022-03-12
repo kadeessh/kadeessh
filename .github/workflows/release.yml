@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    name: Release
+    # only run the release workflow if Mohammed pushed and only if the push is agaist the main repo
+    if: github.actor == 'mohammed90' && github.repository == 'mohammed90/caddy-ssh'
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        go: [ '1.17' ]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go }}
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    # Force fetch upstream tags -- because 65 minutes
+    # tl;dr: actions/checkout@v2 runs this line:
+    #   git -c protocol.version=2 fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin +ebc278ec98bb24f2852b61fde2a9bf2e3d83818b:refs/tags/
+    # which makes its own local lightweight tag, losing all the annotations in the process. Our earlier script ran:
+    #   git fetch --prune --unshallow
+    # which doesn't overwrite that tag because that would be destructive.
+    # Credit to @francislavoie for the investigation.
+    # https://github.com/actions/checkout/issues/290#issuecomment-680260080
+    - name: Force fetch upstream tags
+      run: git fetch --tags --force
+
+    # https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
+    - name: Print Go version and environment
+      id: vars
+      run: |
+        printf "Using go at: $(which go)\n"
+        printf "Go version: $(go version)\n"
+        printf "\n\nGo environment:\n\n"
+        go env
+        printf "\n\nSystem environment:\n\n"
+        env
+        echo "::set-output name=version_tag::${GITHUB_REF/refs\/tags\//}"
+        echo "::set-output name=short_sha::$(git rev-parse --short HEAD)"
+        echo "::set-output name=go_cache::$(go env GOCACHE)"
+
+        # Parse semver
+        TAG=${GITHUB_REF/refs\/tags\//}
+        SEMVER_RE='[^0-9]*\([0-9]*\)[.]\([0-9]*\)[.]\([0-9]*\)\([0-9A-Za-z\.-]*\)'
+        TAG_MAJOR=`echo ${TAG#v} | sed -e "s#$SEMVER_RE#\1#"`
+        TAG_MINOR=`echo ${TAG#v} | sed -e "s#$SEMVER_RE#\2#"`
+        TAG_PATCH=`echo ${TAG#v} | sed -e "s#$SEMVER_RE#\3#"`
+        TAG_SPECIAL=`echo ${TAG#v} | sed -e "s#$SEMVER_RE#\4#"`
+        echo "::set-output name=tag_major::${TAG_MAJOR}"
+        echo "::set-output name=tag_minor::${TAG_MINOR}"
+        echo "::set-output name=tag_patch::${TAG_PATCH}"
+        echo "::set-output name=tag_special::${TAG_SPECIAL}"
+
+    - name: Cache the build cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.vars.outputs.go_cache }}
+        key: ${{ runner.os }}-go${{ matrix.go }}-release-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go${{ matrix.go }}-release
+
+    # GoReleaser will take care of publishing those artifacts into the release
+    - name: Run GoReleaser
+      uses: goreleaser/goreleaser-action@v2
+      with:
+        version: latest
+        args: release --rm-dist
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TAG: ${{ steps.vars.outputs.version_tag }}
+

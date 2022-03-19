@@ -11,7 +11,7 @@ require (
 	github.com/pkg/sftp v1.13.4
 	go.uber.org/multierr v1.8.0
 	go.uber.org/zap v1.19.0
-	golang.org/x/crypto v0.0.0-20220307211146-efcb8507fb70
+	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )
 

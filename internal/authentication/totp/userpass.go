@@ -110,8 +110,7 @@ func (up TOTP) AuthenticateUser(sshctx session.ConnMetadata, password []byte) (a
 
 	// don't return early if account does not exist; we want
 	// to try to avoid side-channels that leak existence
-	valid := totp.Validate(string(password), account.otpKey.Secret())
-	if !valid || !accountExists {
+	if !totp.Validate(string(password), account.otpKey.Secret()) || !accountExists {
 		return Account{}, false, errors.New("invalid password")
 	}
 	return account, true, nil

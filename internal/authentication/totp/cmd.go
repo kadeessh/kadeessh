@@ -2,6 +2,7 @@ package totp
 
 import (
 	"bytes"
+	"encoding/base32"
 	"encoding/base64"
 	"errors"
 	"flag"
@@ -51,16 +52,16 @@ func init() {
 			}
 
 			secretBase64 := base64.StdEncoding.EncodeToString(secret)
-			fmt.Println(secretBase64)
-
+			fmt.Printf("Base64-Encoded Secret: %s\n", secretBase64)
+			fmt.Printf("Base32-Encoded Secret: %s\n", base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(secret))
 			return caddy.ExitCodeSuccess, nil
 		},
 		Usage: "--secret <secret> --username <username> [--issuer <issuser>] [--output <output file name>]",
 		Short: "Generates the QR code file for TOTP app configuration",
 		Long: `
 The command is used to generate the QR code to use with the TOTP apps (e.g. Google Authenticator) to
-add the account. The command will generate the PNG file in addition to printing the secret in base64 encoding to be used
-in the configuration file.
+add the account. The command will generate the PNG file. The command will also print the secret in base64 and base32 encodings to be used
+in the configuration file and the authenticator apps.
 
 The flags --secret and --username are mandatory.
 

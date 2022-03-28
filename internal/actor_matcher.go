@@ -15,6 +15,7 @@ var _ ActorMatcher = ActorMatcherSet{}
 var _ ActorMatcher = MatchRemoteIP{}
 var _ ActorMatcher = MatchNot{}
 var _ ActorMatcher = MatchUser{}
+var _ ActorMatcher = MatchGroup{}
 var _ ActorMatcher = MatchExtension{}
 var _ ActorMatcher = MatchCriticalOption{}
 
@@ -22,6 +23,7 @@ func init() {
 	caddy.RegisterModule(MatchRemoteIP{})
 	caddy.RegisterModule(MatchNot{})
 	caddy.RegisterModule(MatchUser{})
+	caddy.RegisterModule(MatchGroup{})
 	caddy.RegisterModule(MatchExtension{})
 	caddy.RegisterModule(MatchCriticalOption{})
 }

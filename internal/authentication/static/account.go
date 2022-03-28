@@ -80,8 +80,8 @@ func (a Account) GroupIDs() ([]string, error) {
 
 func (a Account) Groups() []authentication.Group {
 	gs := make([]authentication.Group, len(a.groups))
-	for _, v := range a.groups {
-		gs = append(gs, v)
+	for i, v := range a.groups {
+		gs[i] = v
 	}
 	return gs
 }

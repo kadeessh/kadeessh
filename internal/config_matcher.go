@@ -13,11 +13,13 @@ import (
 
 var _ ConfigMatcher = ConfigMatcherSet{}
 var _ ConfigMatcher = MatchConfigRemoteIP{}
+var _ ConfigMatcher = MatchConfigLocalIP{}
 var _ ConfigMatcher = MatchConfigNot{}
 
 func init() {
 	caddy.RegisterModule(MatchConfigRemoteIP{})
 	caddy.RegisterModule(MatchConfigNot{})
+	caddy.RegisterModule(MatchConfigLocalIP{})
 }
 
 // ConfigMatcher should return true if the the connection needs to be configured by the accompanying set

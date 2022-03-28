@@ -28,8 +28,7 @@ type TOTP struct {
 	// The list of accounts to authenticate.
 	Accounts []Account `json:"accounts,omitempty"`
 
-	accounts map[string]Account      `json:"-"`
-	hash     authentication.Comparer `json:"-"`
+	accounts map[string]Account `json:"-"`
 
 	logger *zap.Logger
 }
@@ -72,6 +71,7 @@ func (up *TOTP) Provision(ctx caddy.Context) error {
 			return fmt.Errorf("base64-decoding password: %v", err)
 		}
 		acct.secret = bytes.TrimSpace(secretBytes)
+		up.logger.Info("decoded secret", zap.String("secret", string(acct.secret)))
 		key, err := totp.Generate(totp.GenerateOpts{
 			Issuer:      up.Issuer,
 			AccountName: acct.Uname,

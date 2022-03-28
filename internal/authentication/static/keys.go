@@ -24,6 +24,7 @@ var (
 )
 
 type User struct {
+	// the login username identifying the user
 	Username string `json:"username"`
 	// url to the location, e.g. file:///path/to/file or https://github.com/username.keys
 	Keys []string `json:"keys,omitempty"`
@@ -32,6 +33,7 @@ type User struct {
 }
 
 type StaticPublicKeyProvider struct {
+	// the user list along ith their keys sources
 	Users    []User          `json:"users,omitempty"`
 	userList map[string]User `json:"-"`
 	logger   *zap.Logger
@@ -48,6 +50,8 @@ func (StaticPublicKeyProvider) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision loads up the users' keys from the named sources, which may be https? or file.
+// TODO: modularize the source to allow arbitrary sources, e.g. Hashicorp Vault
 func (pk *StaticPublicKeyProvider) Provision(ctx caddy.Context) error {
 	pk.userList = make(map[string]User)
 	pk.logger = ctx.Logger(pk)
@@ -96,6 +100,8 @@ func (pk *StaticPublicKeyProvider) Provision(ctx caddy.Context) error {
 	return nil
 }
 
+// AuthenticateUser looks up the use in the in-memory map and grab the key to match against the presented key. It adds the key fingerprint
+// in the extensions of the permissions, keyed with "pubkey-fp".
 func (pk StaticPublicKeyProvider) AuthenticateUser(ctx session.ConnMetadata, pubkey gossh.PublicKey) (authentication.User, bool, error) {
 	username := ctx.User()
 	if username == "" {

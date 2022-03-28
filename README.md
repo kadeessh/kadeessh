@@ -245,6 +245,62 @@ The app provides modular authorization process to control the session authorizat
 
 </details>
 
+<details>
+
+<summary>Shell Session with TOTP-based Password Authentication</summary>
+
+The static password authentication does not currently support MFA due to upstream blocker. We can add a bit of dynamic password generation to the server by using the `totp` authentication provider. Use the command `caddy-ssh --username <username> --secret <secret>` to generate the PNG file of the QR code to use in your authenticator app and the base64-encoded secret to use in the configuration file of the ssh server. You can then use the below config, after plugging your username (as known to the OS) and base64-encoded secret, to run the caddy-ssh server. Use the OTP generated in your TOTP provider app when prompted for password.
+
+```json
+{
+  "apps": {
+    "ssh": {
+      "grace_period": "2s",
+      "servers": {
+        "srv0": {
+          "address": "tcp/0.0.0.0:2000-2012",
+          "pty": {
+            "pty": "allow"
+          },
+          "configs": [
+            {
+              "config": {
+                "loader": "provided",
+                "no_client_auth": false,
+                "authentication": {
+                  "username_password": {
+                    "providers": {
+                      "totp": {
+                        "issuer": "caddy-ssh",
+                        "accounts": [
+                          {
+                            "name": "user1",
+                            "secret": "MTIzNDU2Nzg5MDEyMzQ1Njc4OTA="
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "actors": [
+            {
+              "act": {
+                "action": "shell",
+                "shell": "zsh"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+</details>
+
 ## Reference
 
 - [OpenSSH Spec](https://www.openssh.com/specs.html)

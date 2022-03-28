@@ -63,6 +63,10 @@ jobs:
         echo "::set-output name=tag_patch::${TAG_PATCH}"
         echo "::set-output name=tag_special::${TAG_SPECIAL}"
 
+    - name: Install xcaddy
+      run: |
+        go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+
     - name: Cache the build cache
       uses: actions/cache@v2
       with:

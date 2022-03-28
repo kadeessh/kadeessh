@@ -9,8 +9,6 @@ func init() {
 	caddy.RegisterModule(new(MaxSession))
 }
 
-const NamespacePrefix = "ssh.session.authorizers"
-
 type DeauthorizeFunc func(session.Session) error
 
 // Authorizer interface is the basis for authorizers in the namespace ssh.session.authorizers. An erroed

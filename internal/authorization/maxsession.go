@@ -28,7 +28,7 @@ type MaxSession struct {
 // must not have any side-effects.
 func (ms *MaxSession) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID: NamespacePrefix + ".max_session",
+		ID: "ssh.session.authorizers.max_session",
 		New: func() caddy.Module {
 			return new(MaxSession)
 		},

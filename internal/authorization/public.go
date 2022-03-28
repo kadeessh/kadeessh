@@ -18,7 +18,7 @@ type Public struct{}
 // must not have any side-effects.
 func (ms *Public) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID: NamespacePrefix + ".public",
+		ID: "ssh.session.authorizers.public",
 		New: func() caddy.Module {
 			return new(Public)
 		},

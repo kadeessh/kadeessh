@@ -35,7 +35,7 @@ type Chained struct {
 // must not have any side-effects.
 func (c *Chained) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID: NamespacePrefix + ".chained",
+		ID: "ssh.session.authorizers.chained",
 		New: func() caddy.Module {
 			return new(Chained)
 		},

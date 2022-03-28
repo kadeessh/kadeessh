@@ -18,7 +18,7 @@ type Reject struct{}
 // must not have any side-effects.
 func (ms *Reject) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID: NamespacePrefix + ".reject",
+		ID: "ssh.session.authorizers.reject",
 		New: func() caddy.Module {
 			return new(Public)
 		},

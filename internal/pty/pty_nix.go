@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"os/user"
 	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/creack/pty"
@@ -30,7 +31,7 @@ func (s Shell) openPty(sess session.Session, cmd []string) (sshPty, error) {
 	args := []string{}
 	if len(cmd) > 0 {
 		args = append(args, "-c")
-		args = append(args, cmd...)
+		args = append(args, strings.Join(cmd, " "))
 	}
 
 	shell := "/bin/sh"

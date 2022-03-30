@@ -32,7 +32,8 @@ func newTestSessionWithForwarding(t *testing.T, forwardingEnabled bool) (net.Lis
 	l := sampleSocketServer()
 
 	_, client, cleanup := newTestSession(t, &Server{
-		Handler: func(s Session) {},
+		noClientAuth: true,
+		Handler:      func(s Session) {},
 		LocalPortForwardingCallback: func(ctx Context, destinationHost string, destinationPort uint32) bool {
 			addr := net.JoinHostPort(destinationHost, strconv.FormatInt(int64(destinationPort), 10))
 			if addr != l.Addr().String() {

@@ -73,6 +73,7 @@ func TestStdout(t *testing.T) {
 	t.Parallel()
 	testBytes := []byte("Hello world\n")
 	session, _, cleanup := newTestSession(t, &Server{
+		noClientAuth: true,
 		Handler: func(s Session) {
 			s.Write(testBytes)
 		},
@@ -92,6 +93,7 @@ func TestStderr(t *testing.T) {
 	t.Parallel()
 	testBytes := []byte("Hello world\n")
 	session, _, cleanup := newTestSession(t, &Server{
+		noClientAuth: true,
 		Handler: func(s Session) {
 			s.Stderr().Write(testBytes)
 		},
@@ -111,6 +113,7 @@ func TestStdin(t *testing.T) {
 	t.Parallel()
 	testBytes := []byte("Hello world\n")
 	session, _, cleanup := newTestSession(t, &Server{
+		noClientAuth: true,
 		Handler: func(s Session) {
 			io.Copy(s, s) // stdin back into stdout
 		},
@@ -131,6 +134,7 @@ func TestUser(t *testing.T) {
 	t.Parallel()
 	testUser := []byte("progrium")
 	session, _, cleanup := newTestSession(t, &Server{
+		noClientAuth: true,
 		Handler: func(s Session) {
 			io.WriteString(s, s.User())
 		},
@@ -151,6 +155,7 @@ func TestUser(t *testing.T) {
 func TestDefaultExitStatusZero(t *testing.T) {
 	t.Parallel()
 	session, _, cleanup := newTestSession(t, &Server{
+		noClientAuth: true,
 		Handler: func(s Session) {
 			// noop
 		},
@@ -165,6 +170,7 @@ func TestDefaultExitStatusZero(t *testing.T) {
 func TestExplicitExitStatusZero(t *testing.T) {
 	t.Parallel()
 	session, _, cleanup := newTestSession(t, &Server{
+		noClientAuth: true,
 		Handler: func(s Session) {
 			s.Exit(0)
 		},
@@ -179,6 +185,7 @@ func TestExplicitExitStatusZero(t *testing.T) {
 func TestExitStatusNonZero(t *testing.T) {
 	t.Parallel()
 	session, _, cleanup := newTestSession(t, &Server{
+		noClientAuth: true,
 		Handler: func(s Session) {
 			s.Exit(1)
 		},
@@ -201,6 +208,7 @@ func TestPty(t *testing.T) {
 	winHeight := 80
 	done := make(chan bool)
 	session, _, cleanup := newTestSession(t, &Server{
+		noClientAuth: true,
 		Handler: func(s Session) {
 			ptyReq, _, isPty := s.Pty()
 			if !isPty {
@@ -236,6 +244,7 @@ func TestPtyResize(t *testing.T) {
 	winches := make(chan Window)
 	done := make(chan bool)
 	session, _, cleanup := newTestSession(t, &Server{
+		noClientAuth: true,
 		Handler: func(s Session) {
 			ptyReq, winCh, isPty := s.Pty()
 			if !isPty {
@@ -296,6 +305,7 @@ func TestSignals(t *testing.T) {
 	doneChan := make(chan interface{})
 
 	session, _, cleanup := newTestSession(t, &Server{
+		noClientAuth: true,
 		Handler: func(s Session) {
 			// We need to use a buffered channel here, otherwise it's possible for the
 			// second call to Signal to get discarded.
@@ -358,6 +368,7 @@ func TestBreakWithChanRegistered(t *testing.T) {
 	readyToReceiveBreak := make(chan bool)
 
 	session, _, cleanup := newTestSession(t, &Server{
+		noClientAuth: true,
 		Handler: func(s Session) {
 			s.Break(breakChan) // register a break channel with the session
 			readyToReceiveBreak <- true
@@ -410,6 +421,7 @@ func TestBreakWithoutChanRegistered(t *testing.T) {
 	waitUntilAfterBreakSent := make(chan bool)
 
 	session, _, cleanup := newTestSession(t, &Server{
+		noClientAuth: true,
 		Handler: func(s Session) {
 			<-waitUntilAfterBreakSent
 		},

@@ -73,6 +73,9 @@ type Server struct {
 	conns      map[*gossh.ServerConn]struct{}
 	connWg     sync.WaitGroup
 	doneChan   chan struct{}
+
+	// used for tests only
+	noClientAuth bool
 }
 
 func (srv *Server) ensureHostSigner() error {
@@ -127,6 +130,7 @@ func (srv *Server) config(ctx Context) *gossh.ServerConfig {
 		config.AddHostKey(signer)
 	}
 
+	config.NoClientAuth = config.NoClientAuth || srv.noClientAuth
 	if srv.Version != "" {
 		config.ServerVersion = "SSH-2.0-" + srv.Version
 	}

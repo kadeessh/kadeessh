@@ -222,10 +222,11 @@ func (c *ProvidedConfig) ServerConfigCallback(ctx session.Context) *gossh.Server
 		GSSAPIWithMICConfig: c.gSSAPIWithMICConfig,
 	}
 
-	cfg.PasswordCallback = c.Authentication.PasswordCallback(ctx)
-	cfg.PublicKeyCallback = c.Authentication.PublicKeyCallback(ctx)
-	cfg.KeyboardInteractiveCallback = c.Authentication.InteractiveCallback(ctx)
-
+	if c.Authentication != nil {
+		cfg.PasswordCallback = c.Authentication.PasswordCallback(ctx)
+		cfg.PublicKeyCallback = c.Authentication.PublicKeyCallback(ctx)
+		cfg.KeyboardInteractiveCallback = c.Authentication.InteractiveCallback(ctx)
+	}
 	c.signer.Configure(ctx, cfg)
 
 	return cfg

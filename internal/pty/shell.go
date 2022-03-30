@@ -59,7 +59,7 @@ func (s Shell) Handle(sess session.Session) error {
 		return err
 	}
 	spty.Communicate(sess)
-	return nil
+	return spty.Close()
 }
 
 var _ session.Handler = Shell{}

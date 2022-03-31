@@ -15,6 +15,8 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )
 
+require github.com/boombuler/barcode v1.0.1 // indirect
+
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/caddyserver/certmagic v0.15.4
@@ -26,6 +28,7 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/mholt/acmez v1.0.2 // indirect
 	github.com/miekg/dns v1.1.43 // indirect
+	github.com/pquerna/otp v1.3.0
 	github.com/prometheus/client_golang v1.11.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.30.0 // indirect

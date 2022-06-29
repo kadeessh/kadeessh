@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - master
-      - 2.*
   pull_request:
     branches:
       - master
-      - 2.*
 
 jobs:
   # From https://github.com/golangci/golangci-lint-action
@@ -16,10 +14,15 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
-          version: v1.31
+          go-version: '~1.18.1'
+          check-latest: true
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
           # Optional: show only new issues if it's a pull request. The default value is `false`.
-          # only-new-issues: true
+          only-new-issues: true

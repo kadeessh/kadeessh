@@ -1,6 +1,7 @@
 package signer
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -63,17 +64,17 @@ func (f *Fallback) Provision(ctx caddy.Context) error {
 	signersBytes := [][]byte{}
 
 	// RSA
-	if exists := f.storage.Exists(filepath.Join("ssh", "signer", "ssh_host_rsa_key")); !exists {
+	if exists := f.storage.Exists(ctx, filepath.Join("ssh", "signer", "ssh_host_rsa_key")); !exists {
 		private, public := generateRSA(4096)
 		signersBytes = append(signersBytes, private.PrivateBytes())
-		if err := f.storage.Store(filepath.Join("ssh", "signer", "ssh_host_rsa_key"), private.PrivateBytes()); err != nil {
+		if err := f.storage.Store(ctx, filepath.Join("ssh", "signer", "ssh_host_rsa_key"), private.PrivateBytes()); err != nil {
 			return err
 		}
-		if err := f.storage.Store(filepath.Join("ssh", "signer", "ssh_host_rsa_key.pub"), public.PublicBytes()); err != nil {
+		if err := f.storage.Store(ctx, filepath.Join("ssh", "signer", "ssh_host_rsa_key.pub"), public.PublicBytes()); err != nil {
 			return err
 		}
 	} else {
-		bs, err := f.storage.Load(filepath.Join("ssh", "signer", "ssh_host_rsa_key"))
+		bs, err := f.storage.Load(ctx, filepath.Join("ssh", "signer", "ssh_host_rsa_key"))
 		if err != nil {
 			return err
 		}
@@ -81,18 +82,18 @@ func (f *Fallback) Provision(ctx caddy.Context) error {
 	}
 
 	// ed25519
-	if exists := f.storage.Exists(filepath.Join("ssh", "signer", "ssh_host_ed25519_key")); !exists {
+	if exists := f.storage.Exists(ctx, filepath.Join("ssh", "signer", "ssh_host_ed25519_key")); !exists {
 		private, public := generateEd25519()
 
-		if err := f.storage.Store(filepath.Join("ssh", "signer", "ssh_host_ed25519_key"), private.PrivateBytes()); err != nil {
+		if err := f.storage.Store(ctx, filepath.Join("ssh", "signer", "ssh_host_ed25519_key"), private.PrivateBytes()); err != nil {
 			return err
 		}
-		if err := f.storage.Store(filepath.Join("ssh", "signer", "ssh_host_ed25519_key.pub"), public.PublicBytes()); err != nil {
+		if err := f.storage.Store(ctx, filepath.Join("ssh", "signer", "ssh_host_ed25519_key.pub"), public.PublicBytes()); err != nil {
 			return err
 		}
 		signersBytes = append(signersBytes, private.PrivateBytes())
 	} else {
-		bs, err := f.storage.Load(filepath.Join("ssh", "signer", "ssh_host_ed25519_key"))
+		bs, err := f.storage.Load(ctx, filepath.Join("ssh", "signer", "ssh_host_ed25519_key"))
 		if err != nil {
 			return err
 		}
@@ -100,15 +101,15 @@ func (f *Fallback) Provision(ctx caddy.Context) error {
 	}
 
 	// ecdsa &  DSA intentionally not generated, but existing keys are loaded
-	if f.storage.Exists(filepath.Join("ssh", "signer", "ssh_host_ecdsa_key")) {
-		bs, err := f.storage.Load(filepath.Join("ssh", "signer", "ssh_host_ecdsa_key"))
+	if f.storage.Exists(ctx, filepath.Join("ssh", "signer", "ssh_host_ecdsa_key")) {
+		bs, err := f.storage.Load(ctx, filepath.Join("ssh", "signer", "ssh_host_ecdsa_key"))
 		if err != nil {
 			return err
 		}
 		signersBytes = append(signersBytes, bs)
 	}
-	if f.storage.Exists(filepath.Join("ssh", "signer", "ssh_host_dsa_key")) {
-		bs, err := f.storage.Load(filepath.Join("ssh", "signer", "ssh_host_dsa_key"))
+	if f.storage.Exists(ctx, filepath.Join("ssh", "signer", "ssh_host_dsa_key")) {
+		bs, err := f.storage.Load(ctx, filepath.Join("ssh", "signer", "ssh_host_dsa_key"))
 		if err != nil {
 			return err
 		}
@@ -129,7 +130,7 @@ func (f *Fallback) Provision(ctx caddy.Context) error {
 
 // GoSSHSigner returns the collection of signing keys available in the storage
 func (f *Fallback) GoSSHSigner() []gossh.Signer {
-	keys, err := f.storage.List(filepath.Join("ssh", "signer"), true)
+	keys, err := f.storage.List(context.TODO(), filepath.Join("ssh", "signer"), true)
 	if err != nil {
 		// they were provisioned milliseconds ago, listing them shouldn't fail.
 		panic(err)
@@ -140,7 +141,7 @@ func (f *Fallback) GoSSHSigner() []gossh.Signer {
 		if strings.ToLower(filepath.Ext(v)) == ".pub" {
 			continue
 		}
-		bs, err := f.storage.Load(v)
+		bs, err := f.storage.Load(context.TODO(), v)
 		if err != nil {
 			panic(err)
 		}

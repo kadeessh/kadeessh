@@ -13,13 +13,19 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest ]
-        go: [ '1.17' ]
+        go: [ '1.18' ]
+        include:
+        # Set the minimum Go patch version for the given Go minor
+        # Usable via ${{ matrix.GO_SEMVER }}
+        - go: '1.18'
+          GO_SEMVER: '~1.18.1'
     runs-on: ${{ matrix.os }}
     steps:
     - name: Install Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v3
       with:
-        go-version: ${{ matrix.go }}
+        go-version: ${{ matrix.GO_SEMVER }}
+        check-latest: true
 
     - name: Checkout code
       uses: actions/checkout@v2
@@ -70,7 +76,12 @@ jobs:
     - name: Cache the build cache
       uses: actions/cache@v2
       with:
-        path: ${{ steps.vars.outputs.go_cache }}
+        # In order:
+        # * Module download cache
+        # * Build cache (Linux)
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
         key: ${{ runner.os }}-go${{ matrix.go }}-release-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go${{ matrix.go }}-release

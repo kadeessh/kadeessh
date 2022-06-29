@@ -10,7 +10,7 @@ You start by looking for the binaries in the [GitHub Releases](https://github.co
 
 The other way is to build the project using [xcaddy](https://github.com/caddyserver/xcaddy) with the command:
 
-```
+```shell
 xcaddy build --with github.com/mohammed90/caddy-ssh[@<version>]
 ```
 
@@ -68,8 +68,7 @@ Note: The password is `test`. Once satisfied with the design and implementation,
                 }
               ],
               "act": {
-                "action": "shell",
-                "shell": "zsh"
+                "action": "shell"
               }
             }
           ]
@@ -129,8 +128,7 @@ Note: The password is `test`. Once satisfied with the design and implementation,
           "actors": [
             {
               "act": {
-                "action": "shell",
-                "shell": "bash"
+                "action": "shell"
               }
             }
           ]
@@ -231,8 +229,7 @@ The app provides modular authorization process to control the session authorizat
           "actors": [
             {
               "act": {
-                "action": "shell",
-                "shell": "zsh"
+                "action": "shell"
               }
             }
           ]
@@ -243,6 +240,53 @@ The app provides modular authorization process to control the session authorizat
 }
 ```
 
+</details>
+
+<details>
+<summary>Shell with `force_command`</summary>
+
+Runs the `go version` command for authenticated users, regardless of the command the user has sent.
+
+```json
+{
+  "apps": {
+    "ssh": {
+      "grace_period": "2s",
+      "servers": {
+        "srv0": {
+          "address": "tcp/0.0.0.0:2000-2012",
+          "pty": {
+            "pty": "allow"
+          },
+          "configs": [
+            {
+              "config": {
+                "loader": "provided",
+                "no_client_auth": false,
+                "authentication": {
+                  "public_key": {
+                    "providers": {
+                      "os": {}
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "actors": [
+            {
+              "act": {
+                "action": "shell",
+                "force_command": "go 'version'"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
 </details>
 
 ## Reference

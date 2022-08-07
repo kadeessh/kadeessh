@@ -4,8 +4,9 @@
 package passwd
 
 import (
-	"os/user"
 	"strconv"
+
+	user "github.com/tweekmonster/luser"
 )
 
 func (p *passwd) Get(username string) *Entry {

@@ -3,8 +3,9 @@ package osauth
 import (
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path/filepath"
+
+	user "github.com/tweekmonster/luser"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/mohammed90/caddy-ssh/internal/authentication"

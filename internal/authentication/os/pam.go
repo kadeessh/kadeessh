@@ -1,13 +1,11 @@
 //go:build (darwin || linux || freebsd || netbsd) && cgo && pam
-// +build darwin linux freebsd netbsd
-// +build cgo
-// +build pam
 
 package osauth
 
 import (
 	"errors"
-	"os/user"
+
+	user "github.com/tweekmonster/luser"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/mohammed90/caddy-ssh/internal/authentication"

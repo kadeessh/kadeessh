@@ -1,7 +1,7 @@
 package osauth
 
 import (
-	"os/user"
+	user "github.com/tweekmonster/luser"
 
 	"github.com/mohammed90/caddy-ssh/internal/authentication"
 	gossh "golang.org/x/crypto/ssh"

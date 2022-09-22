@@ -64,7 +64,7 @@ func (pm OS) AuthenticateUser(sshctx session.ConnMetadata, password []byte) (aut
 	}
 	err = t.AcctMgmt(0)
 	if err != nil {
-		pm.logger.Warn("error Authenticate", zap.Error(err))
+		pm.logger.Warn("error Pam AcctMgmt", zap.Error(err))
 		return nil, false, err
 	}
 	u, err := user.Lookup(sshctx.User())

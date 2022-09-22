@@ -58,6 +58,8 @@ func (pk *StaticPublicKeyProvider) Provision(ctx caddy.Context) error {
 	repl := caddy.NewReplacer()
 
 	t := &http.Transport{}
+	// The path is set by the server administrator, not by arbitrary user.
+	// nolint:gosec
 	t.RegisterProtocol("file", http.NewFileTransport(http.Dir("/")))
 	c := &http.Client{Transport: t}
 

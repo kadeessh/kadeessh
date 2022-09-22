@@ -169,8 +169,10 @@ func (m MatchRemoteIP) ShouldAct(r session.ActorMatchingContext) bool {
 //
 // ```json
 // [
-// 	{},
-// 	{}
+//
+//	{},
+//	{}
+//
 // ]
 // ```
 //

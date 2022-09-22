@@ -236,8 +236,10 @@ func (m MatchConfigLocalIP) ShouldConfigure(ctx session.ConnConfigMatchingContex
 //
 // ```json
 // [
-// 	{},
-// 	{}
+//
+//	{},
+//	{}
+//
 // ]
 // ```
 //

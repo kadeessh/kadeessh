@@ -21,10 +21,6 @@ builds:
     goarch:
       - "amd64"
 
-archives:
-  - replacements:
-      darwin: mac
-
 checksum:
   name_template: "checksums.txt"
   algorithm: sha512

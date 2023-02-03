@@ -5,25 +5,33 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
-	"strings"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/certmagic"
 	internalcaddyssh "github.com/mohammed90/caddy-ssh/internal"
 	"github.com/mohammed90/caddy-ssh/internal/session"
+	"go.step.sm/crypto/pemutil"
 	"go.uber.org/zap"
 	gossh "golang.org/x/crypto/ssh"
 )
 
 var _ internalcaddyssh.SignerConfigurator = (*Fallback)(nil)
 
+const (
+	rsa_host_key     = "ssh_host_rsa_key"
+	ed25519_host_key = "ssh_host_ed25519_key"
+	ecdsa_host_key   = "ssh_host_ecdsa_key"
+)
+
 func init() {
 	caddy.RegisterModule(Fallback{})
 }
 
-// Fallback will check if the signers exist in the storage, otherwise generate them. It is
-// the default signer.
+// Fallback signer checks if the RSA, Ed25519, and ECDSA private keys exist in the storage to load. If they're absent,
+// RSA-4096 and Ed25519 keys are generated and stored. The ECDSA key is only loaded, not generated.
+// It is the default signer.
 type Fallback struct {
+	// The Caddy storage module to load/store the keys. If absent or null, the default storage is loaded.
 	StorageRaw json.RawMessage `json:"storage,omitempty" caddy:"namespace=caddy.storage inline_key=module"`
 	signers    []gossh.Signer
 	storage    certmagic.Storage
@@ -64,94 +72,71 @@ func (f *Fallback) Provision(ctx caddy.Context) error {
 	signersBytes := [][]byte{}
 
 	// RSA
-	if exists := f.storage.Exists(ctx, filepath.Join("ssh", "signer", "ssh_host_rsa_key")); !exists {
-		private, public := generateRSA(4096)
-		signersBytes = append(signersBytes, private.PrivateBytes())
-		if err := f.storage.Store(ctx, filepath.Join("ssh", "signer", "ssh_host_rsa_key"), private.PrivateBytes()); err != nil {
-			return err
-		}
-		if err := f.storage.Store(ctx, filepath.Join("ssh", "signer", "ssh_host_rsa_key.pub"), public.PublicBytes()); err != nil {
-			return err
-		}
-	} else {
-		bs, err := f.storage.Load(ctx, filepath.Join("ssh", "signer", "ssh_host_rsa_key"))
-		if err != nil {
-			return err
-		}
-		signersBytes = append(signersBytes, bs)
+	if err := loadOrGenerateAndStore(ctx, f.storage, rsa_host_key, generateRSA, &signersBytes); err != nil {
+		return err
 	}
 
 	// ed25519
-	if exists := f.storage.Exists(ctx, filepath.Join("ssh", "signer", "ssh_host_ed25519_key")); !exists {
-		private, public := generateEd25519()
-
-		if err := f.storage.Store(ctx, filepath.Join("ssh", "signer", "ssh_host_ed25519_key"), private.PrivateBytes()); err != nil {
-			return err
-		}
-		if err := f.storage.Store(ctx, filepath.Join("ssh", "signer", "ssh_host_ed25519_key.pub"), public.PublicBytes()); err != nil {
-			return err
-		}
-		signersBytes = append(signersBytes, private.PrivateBytes())
-	} else {
-		bs, err := f.storage.Load(ctx, filepath.Join("ssh", "signer", "ssh_host_ed25519_key"))
-		if err != nil {
-			return err
-		}
-		signersBytes = append(signersBytes, bs)
+	if err := loadOrGenerateAndStore(ctx, f.storage, ed25519_host_key, generateEd25519, &signersBytes); err != nil {
+		return err
 	}
 
-	// ecdsa &  DSA intentionally not generated, but existing keys are loaded
-	if f.storage.Exists(ctx, filepath.Join("ssh", "signer", "ssh_host_ecdsa_key")) {
-		bs, err := f.storage.Load(ctx, filepath.Join("ssh", "signer", "ssh_host_ecdsa_key"))
-		if err != nil {
-			return err
-		}
-		signersBytes = append(signersBytes, bs)
+	// ECDSA is only loaded, not generated
+	if err := loadFromStorage(ctx, f.storage, ecdsa_host_key, &signersBytes); err != nil {
+		return err
 	}
-	if f.storage.Exists(ctx, filepath.Join("ssh", "signer", "ssh_host_dsa_key")) {
-		bs, err := f.storage.Load(ctx, filepath.Join("ssh", "signer", "ssh_host_dsa_key"))
-		if err != nil {
-			return err
-		}
-		signersBytes = append(signersBytes, bs)
-	}
+
+	// DSA is intentionally ignored
 
 	// load signers
 	for _, sb := range signersBytes {
-		s, err := gossh.ParsePrivateKey(sb)
+		s, err := pemutil.ParseOpenSSHPrivateKey(sb)
 		if err != nil {
 			return err
 		}
-		f.signers = append(f.signers, s)
+		sig, err := gossh.NewSignerFromKey(s)
+		if err != nil {
+			return err
+		}
+		f.signers = append(f.signers, sig)
 	}
 
 	return nil
 }
 
-// GoSSHSigner returns the collection of signing keys available in the storage
-func (f *Fallback) GoSSHSigner() []gossh.Signer {
-	keys, err := f.storage.List(context.TODO(), filepath.Join("ssh", "signer"), true)
+func loadOrGenerateAndStore(ctx context.Context, storage certmagic.Storage, keyName string, generator func() privateKey, signersBytes *[][]byte) error {
+	if !storage.Exists(ctx, filepath.Join(keyPath(keyName)...)) {
+		// prepare the keys bytes
+		private := generator()
+		keyPem, err := pemEncode(private)
+		if err != nil {
+			return err
+		}
+		public, err := encodePublicKey(private.Public())
+		if err != nil {
+			return err
+		}
+
+		// write 'em
+		if err := storage.Store(ctx, filepath.Join(keyPath(keyName)...), pemBytes(keyPem)); err != nil {
+			return err
+		}
+		if err := storage.Store(ctx, filepath.Join(keyPath(keyName+".pub")...), public); err != nil {
+			return err
+		}
+		*signersBytes = append(*signersBytes, pemBytes(keyPem))
+		return nil
+	}
+	return loadFromStorage(ctx, storage, keyName, signersBytes)
+}
+
+func loadFromStorage(ctx context.Context, storage certmagic.Storage, keyName string, signersBytes *[][]byte) error {
+	bs, err := storage.Load(ctx, filepath.Join(keyPath(keyName)...))
 	if err != nil {
-		// they were provisioned milliseconds ago, listing them shouldn't fail.
-		panic(err)
+		return err
 	}
-	signers := make([]gossh.Signer, 0)
-	for _, v := range keys {
-		// we don't parse public keys as signers
-		if strings.ToLower(filepath.Ext(v)) == ".pub" {
-			continue
-		}
-		bs, err := f.storage.Load(context.TODO(), v)
-		if err != nil {
-			panic(err)
-		}
-		s, err := gossh.ParsePrivateKey(bs)
-		if err != nil {
-			panic(err)
-		}
-		signers = append(signers, s)
-	}
-	return signers
+	*signersBytes = append(*signersBytes, bs)
+	return nil
 }
 
 // Configure adds the signers/hostkeys to the session

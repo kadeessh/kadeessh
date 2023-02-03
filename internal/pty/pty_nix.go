@@ -60,7 +60,7 @@ func (s Shell) openPty(sess session.Session) (sshPty, error) {
 	if user == nil {
 		return nil, fmt.Errorf("error finding user details")
 	}
-	s.logger.Info("got user", zap.String("session_id", sessionId), zap.Object("user", user))
+	s.logger.Info("found user", zap.String("session_id", sessionId), zap.Object("user", user))
 
 	shell := user.Shell
 	execCmd := exec.Command(shell, args...)

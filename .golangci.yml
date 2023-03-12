@@ -16,7 +16,6 @@ linters:
     - gosec
     - ineffassign
     - misspell
-    - deadcode
 
 run:
   # default concurrency is a available CPU number.

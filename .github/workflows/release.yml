@@ -13,12 +13,12 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest ]
-        go: [ '1.18' ]
+        go: [ '1.20' ]
         include:
         # Set the minimum Go patch version for the given Go minor
         # Usable via ${{ matrix.GO_SEMVER }}
-        - go: '1.18'
-          GO_SEMVER: '~1.18.1'
+        - go: '1.20'
+          GO_SEMVER: '~1.20.1'
     runs-on: ${{ matrix.os }}
     steps:
     - name: Install Go

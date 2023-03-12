@@ -2,7 +2,7 @@ package static
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -76,7 +76,7 @@ func (pk *StaticPublicKeyProvider) Provision(ctx caddy.Context) error {
 				if err != nil {
 					return err
 				}
-				authKeysBytes, err = ioutil.ReadAll(res.Body)
+				authKeysBytes, err = io.ReadAll(res.Body)
 				if err != nil {
 					res.Body.Close()
 					return err

@@ -1,7 +1,6 @@
 package osauth
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -60,7 +59,7 @@ func (o *PublicKey) AuthenticateUser(ctx session.ConnMetadata, pubkey gossh.Publ
 	if _, err := os.Stat(authKeysFiles); err != nil && os.IsNotExist(err) {
 		return account{}, false, nil
 	}
-	authKeysBytes, err := ioutil.ReadFile(authKeysFiles)
+	authKeysBytes, err := os.ReadFile(authKeysFiles)
 	if err != nil {
 		return account{}, false, err
 	}

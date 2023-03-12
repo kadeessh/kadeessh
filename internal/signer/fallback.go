@@ -82,7 +82,7 @@ func (f *Fallback) Provision(ctx caddy.Context) error {
 	}
 
 	// ECDSA is only loaded, not generated
-	if err := loadFromStorage(ctx, f.storage, ecdsa_host_key, &signersBytes); err != nil {
+	if err := loadFromStorage(ctx, f.storage, ecdsa_host_key, &signersBytes); f.storage.Exists(ctx, filepath.Join(keyPath(ecdsa_host_key)...)) && err != nil {
 		return err
 	}
 

@@ -20,6 +20,11 @@ jobs:
         - go: '1.20'
           GO_SEMVER: '~1.20.1'
     runs-on: ${{ matrix.os }}
+    permissions:
+      id-token: write
+      # https://docs.github.com/en/rest/overview/permissions-required-for-github-apps#permission-on-contents
+      # "Releases" is part of `contents`, so it needs the `write`
+      contents: write
     steps:
     - name: Install Go
       uses: actions/setup-go@v3

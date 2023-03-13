@@ -16,6 +16,8 @@ linters:
     - gosec
     - ineffassign
     - misspell
+  disable:
+    - unused
 
 run:
   # default concurrency is a available CPU number.

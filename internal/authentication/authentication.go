@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net"
 
-	"github.com/mohammed90/caddy-ssh/internal/session"
+	"github.com/kadeessh/kadeessh/internal/session"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	gossh "golang.org/x/crypto/ssh"

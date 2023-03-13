@@ -8,8 +8,8 @@ import (
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/certmagic"
-	internalcaddyssh "github.com/mohammed90/caddy-ssh/internal"
-	"github.com/mohammed90/caddy-ssh/internal/session"
+	internalcaddyssh "github.com/kadeessh/kadeessh/internal"
+	"github.com/kadeessh/kadeessh/internal/session"
 	"go.step.sm/crypto/pemutil"
 	"go.uber.org/zap"
 	gossh "golang.org/x/crypto/ssh"

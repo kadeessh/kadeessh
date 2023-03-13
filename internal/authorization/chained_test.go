@@ -8,8 +8,8 @@ import (
 	"net"
 	"testing"
 
-	"github.com/mohammed90/caddy-ssh/internal/session"
-	"github.com/mohammed90/caddy-ssh/internal/ssh"
+	"github.com/kadeessh/kadeessh/internal/session"
+	"github.com/kadeessh/kadeessh/internal/ssh"
 	"go.uber.org/zap"
 )
 

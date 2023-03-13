@@ -84,18 +84,18 @@ jobs:
       run: |
         go get -v -t -d ./...
 
-    - name: Build Caddy-SSH
+    - name: Build Kadeessh
       env:
         CGO_ENABLED: 0
       run: |
         go install -v github.com/caddyserver/xcaddy/cmd/xcaddy@latest
-        $(go env GOPATH)/bin/xcaddy build --with github.com/mohammed90/caddy-ssh=. --output caddy-ssh
+        $(go env GOPATH)/bin/xcaddy build --with github.com/kadeessh/kadeessh=. --output kadeessh
 
     - name: Publish Build Artifact
       uses: actions/upload-artifact@v1
       with:
-        name: caddy-ssh_${{ runner.os }}_go${{ matrix.go }}_${{ steps.vars.outputs.short_sha }}
-        path: caddy-ssh
+        name: kadeessh_${{ runner.os }}_go${{ matrix.go }}_${{ steps.vars.outputs.short_sha }}
+        path: kadeessh
 
     # Commented bits below were useful to allow the job to continue
     # even if the tests fail, so we can publish the report separately

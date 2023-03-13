@@ -1,4 +1,4 @@
-module github.com/mohammed90/caddy-ssh
+module github.com/kadeessh/kadeessh
 
 go 1.20
 

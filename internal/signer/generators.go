@@ -20,7 +20,7 @@ type privateKey interface {
 }
 
 func pemEncode(private crypto.PrivateKey) (*pem.Block, error) {
-	return pemutil.SerializeOpenSSHPrivateKey(private, pemutil.WithComment("caddy-ssh"))
+	return pemutil.SerializeOpenSSHPrivateKey(private, pemutil.WithComment("kadeessh"))
 }
 func pemBytes(p *pem.Block) []byte {
 	return pem.EncodeToMemory(p)

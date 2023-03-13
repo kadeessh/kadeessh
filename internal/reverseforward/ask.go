@@ -1,7 +1,7 @@
 package reverseforward
 
 import (
-	"github.com/mohammed90/caddy-ssh/internal/ssh"
+	"github.com/kadeessh/kadeessh/internal/ssh"
 )
 
 // PortForwardingAsker is the interface necessary to ask whether a session is

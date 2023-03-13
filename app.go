@@ -1,12 +1,12 @@
 package caddyssh
 
 import (
-	_ "github.com/mohammed90/caddy-ssh/internal"
-	_ "github.com/mohammed90/caddy-ssh/internal/actors"
-	_ "github.com/mohammed90/caddy-ssh/internal/authentication"
-	_ "github.com/mohammed90/caddy-ssh/internal/authentication/os"
-	_ "github.com/mohammed90/caddy-ssh/internal/authentication/static"
-	_ "github.com/mohammed90/caddy-ssh/internal/authorization"
-	_ "github.com/mohammed90/caddy-ssh/internal/signer"
-	_ "github.com/mohammed90/caddy-ssh/internal/subsystem"
+	_ "github.com/kadeessh/kadeessh/internal"
+	_ "github.com/kadeessh/kadeessh/internal/actors"
+	_ "github.com/kadeessh/kadeessh/internal/authentication"
+	_ "github.com/kadeessh/kadeessh/internal/authentication/os"
+	_ "github.com/kadeessh/kadeessh/internal/authentication/static"
+	_ "github.com/kadeessh/kadeessh/internal/authorization"
+	_ "github.com/kadeessh/kadeessh/internal/signer"
+	_ "github.com/kadeessh/kadeessh/internal/subsystem"
 )

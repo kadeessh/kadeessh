@@ -8,8 +8,8 @@ import (
 	user "github.com/tweekmonster/luser"
 
 	"github.com/caddyserver/caddy/v2"
-	"github.com/mohammed90/caddy-ssh/internal/authentication"
-	"github.com/mohammed90/caddy-ssh/internal/session"
+	"github.com/kadeessh/kadeessh/internal/authentication"
+	"github.com/kadeessh/kadeessh/internal/session"
 	"github.com/msteinert/pam"
 	"go.uber.org/zap"
 )

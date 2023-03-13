@@ -9,8 +9,8 @@ import (
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/google/uuid"
-	"github.com/mohammed90/caddy-ssh/internal/authentication"
-	"github.com/mohammed90/caddy-ssh/internal/session"
+	"github.com/kadeessh/kadeessh/internal/authentication"
+	"github.com/kadeessh/kadeessh/internal/session"
 	"go.uber.org/zap"
 )
 

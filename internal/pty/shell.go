@@ -4,8 +4,8 @@ import (
 	"io"
 
 	"github.com/caddyserver/caddy/v2"
-	"github.com/mohammed90/caddy-ssh/internal/pty/passwd"
-	"github.com/mohammed90/caddy-ssh/internal/session"
+	"github.com/kadeessh/kadeessh/internal/pty/passwd"
+	"github.com/kadeessh/kadeessh/internal/session"
 	"go.uber.org/zap"
 )
 

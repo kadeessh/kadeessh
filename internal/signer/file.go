@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 
 	"github.com/caddyserver/caddy/v2"
-	internalcaddyssh "github.com/mohammed90/caddy-ssh/internal"
-	"github.com/mohammed90/caddy-ssh/internal/session"
+	internalcaddyssh "github.com/kadeessh/kadeessh/internal"
+	"github.com/kadeessh/kadeessh/internal/session"
 	gossh "golang.org/x/crypto/ssh"
 )
 

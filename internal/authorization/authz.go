@@ -2,7 +2,7 @@ package authorization
 
 import (
 	"github.com/caddyserver/caddy/v2"
-	"github.com/mohammed90/caddy-ssh/internal/session"
+	"github.com/kadeessh/kadeessh/internal/session"
 )
 
 func init() {

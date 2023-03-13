@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/caddyserver/caddy/v2"
-	"github.com/mohammed90/caddy-ssh/internal/session"
+	"github.com/kadeessh/kadeessh/internal/session"
 )
 
 // Actor is a collection of actor matchers and actors of an ssh session

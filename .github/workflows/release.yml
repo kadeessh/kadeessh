@@ -9,7 +9,7 @@ jobs:
   release:
     name: Release
     # only run the release workflow if Mohammed pushed and only if the push is agaist the main repo
-    if: github.actor == 'mohammed90' && github.repository == 'mohammed90/caddy-ssh'
+    if: github.actor == 'mohammed90' && github.repository == 'kadeessh/kadeessh'
     strategy:
       matrix:
         os: [ ubuntu-latest ]

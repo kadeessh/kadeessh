@@ -1,17 +1,21 @@
-# Caddy SSH
+# Kadeessh
 
 _This is still under heavy WIP._
 
-Caddy SSH is an extensible, modular SSH server built as Caddy app. The project aims to provide an ssh server with safe, modern, and secure defaults.
+Kadeessh (formerly Caddy-SSH) is an extensible, modular SSH server built as Caddy app. The project aims to provide an ssh server with safe, modern, and secure defaults.
+
+## What's Kadeessh?
+
+Kadeesh (كديش) is the Levantine Arabic word for [hinny](https://en.wikipedia.org/wiki/Hinny), the reciprocal of mule. This name is a hat-tip to the basic components of the project, i.e. Caddy and SSH.
 
 ## Install
 
-You start by looking for the binaries in the [GitHub Releases](https://github.com/mohammed90/caddy-ssh/releases) page. Download the executable then place it somewhere in your PATH.
+You start by looking for the binaries in the [GitHub Releases](https://github.com/kadeessh/kadeessh/releases) page. Download the executable then place it somewhere in your PATH.
 
 The other way is to build the project using [xcaddy](https://github.com/caddyserver/xcaddy) with the command:
 
 ```shell
-xcaddy build --with github.com/mohammed90/caddy-ssh[@<version>]
+xcaddy build --with github.com/kadeessh/kadeessh[@<version>]
 ```
 
 where `[@<version>]` is optional and `<version>` may be replaced by the desired version.

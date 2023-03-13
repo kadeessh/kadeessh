@@ -10,7 +10,7 @@ import (
 	"unsafe"
 
 	"github.com/creack/pty"
-	"github.com/mohammed90/caddy-ssh/internal/ssh"
+	"github.com/kadeessh/kadeessh/internal/ssh"
 )
 
 func setWinsize(f *os.File, w, h int) {

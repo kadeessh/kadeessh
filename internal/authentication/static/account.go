@@ -3,7 +3,7 @@ package static
 import (
 	"runtime"
 
-	"github.com/mohammed90/caddy-ssh/internal/authentication"
+	"github.com/kadeessh/kadeessh/internal/authentication"
 	gossh "golang.org/x/crypto/ssh"
 )
 

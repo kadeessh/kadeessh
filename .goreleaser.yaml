@@ -3,12 +3,12 @@ before:
     - sh -c 'rm -r ./custom-build || true'
     # hooks don't expand globs, so shell out
     - sh -c ./.github/scripts/build-env.sh
-    - go mod edit -require=github.com/mohammed90/caddy-ssh@{{.Env.TAG}} ./custom-build/go.mod
+    - go mod edit -require=github.com/kadeessh/kadeessh@{{.Env.TAG}} ./custom-build/go.mod
     - sh -c 'cd custom-build && go mod tidy'
 
 builds:
   - dir: custom-build
-    binary: caddy-ssh
+    binary: kadeessh
     env:
       - CGO_ENABLED=0
     flags:
@@ -30,8 +30,8 @@ snapshot:
 
 release:
   github:
-    owner: mohammed90
-    name: caddy-ssh
+    owner: kadeessh
+    name: kadeessh
   draft: true
   prerelease: auto
 

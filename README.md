@@ -299,6 +299,6 @@ Runs the `go version` command for authenticated users, regardless of the command
 
 ## Questions
 
-Q: I deny PTY allocation in config, but the is processed and executed anyways. Why?
+Q: I deny PTY allocation in config, but the request is processed and executed anyways. Why?
 
 A: This is a quirk in OpenSSH which defaults to `auto` if the `-t` option on the client (i.e. forcing tty allocation). It asks for the tty allocation but switches the mode to `auto` when denied and proceeds without the tty allocation request. The StackOverflow answer explaining the details is [here](https://stackoverflow.com/a/10346575).

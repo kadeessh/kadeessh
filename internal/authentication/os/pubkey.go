@@ -58,6 +58,8 @@ func (o *PublicKey) AuthenticateUser(ctx session.ConnMetadata, pubkey gossh.Publ
 	authKeysFiles := filepath.Join(u.HomeDir, ".ssh", "authorized_keys")
 	if _, err := os.Stat(authKeysFiles); err != nil && os.IsNotExist(err) {
 		return account{}, false, nil
+	} else if err != nil {
+		return account{}, false, err
 	}
 	authKeysBytes, err := os.ReadFile(authKeysFiles)
 	if err != nil {

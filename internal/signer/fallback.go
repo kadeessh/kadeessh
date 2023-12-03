@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/certmagic"
 	internalcaddyssh "github.com/kadeessh/kadeessh/internal"
 	"github.com/kadeessh/kadeessh/internal/session"
 	"go.step.sm/crypto/pemutil"
+	"go.step.sm/crypto/sshutil"
 	"go.uber.org/zap"
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -32,10 +34,11 @@ func init() {
 // It is the default signer.
 type Fallback struct {
 	// The Caddy storage module to load/store the keys. If absent or null, the default storage is loaded.
-	StorageRaw json.RawMessage `json:"storage,omitempty" caddy:"namespace=caddy.storage inline_key=module"`
-	signers    []gossh.Signer
-	storage    certmagic.Storage
-	logger     *zap.Logger
+	StorageRaw  json.RawMessage `json:"storage,omitempty" caddy:"namespace=caddy.storage inline_key=module"`
+	Identifiers []string        `json:"identifiers,omitempty"`
+	signers     []gossh.Signer
+	storage     certmagic.Storage
+	logger      *zap.Logger
 }
 
 // This method indicates that the type is a Caddy
@@ -72,12 +75,12 @@ func (f *Fallback) Provision(ctx caddy.Context) error {
 	signersBytes := [][]byte{}
 
 	// RSA
-	if err := loadOrGenerateAndStore(ctx, f.storage, rsa_host_key, generateRSA, &signersBytes); err != nil {
+	if err := loadOrGenerateAndStore(ctx, f.storage, rsa_host_key, generateRSA, &signersBytes, f.Identifiers); err != nil {
 		return err
 	}
 
 	// ed25519
-	if err := loadOrGenerateAndStore(ctx, f.storage, ed25519_host_key, generateEd25519, &signersBytes); err != nil {
+	if err := loadOrGenerateAndStore(ctx, f.storage, ed25519_host_key, generateEd25519, &signersBytes, f.Identifiers); err != nil {
 		return err
 	}
 
@@ -104,7 +107,7 @@ func (f *Fallback) Provision(ctx caddy.Context) error {
 	return nil
 }
 
-func loadOrGenerateAndStore(ctx context.Context, storage certmagic.Storage, keyName string, generator func() privateKey, signersBytes *[][]byte) error {
+func loadOrGenerateAndStore(ctx context.Context, storage certmagic.Storage, keyName string, generator func() privateKey, signersBytes *[][]byte, principals []string) error {
 	if !storage.Exists(ctx, filepath.Join(keyPath(keyName)...)) {
 		// prepare the keys bytes
 		private := generator()
@@ -115,6 +118,39 @@ func loadOrGenerateAndStore(ctx context.Context, storage certmagic.Storage, keyN
 		public, err := encodePublicKey(private.Public())
 		if err != nil {
 			return err
+		}
+		if len(principals) > 0 {
+			pub, err := gossh.NewPublicKey(private.Public())
+			if err != nil {
+				return err
+			}
+			sshutilCert, err := sshutil.NewCertificate(
+				sshutil.CertificateRequest{
+					Key:        pub,
+					Principals: principals,
+				},
+				sshutil.WithTemplate(
+					sshutil.DefaultTemplate,
+					sshutil.CreateTemplateData(sshutil.HostCert, keyName, principals),
+				),
+			)
+			if err != nil {
+				return err
+			}
+			sshutilCert.ValidAfter = uint64(time.Now().UTC().Unix())
+			cert := sshutilCert.GetCertificate()
+			signer, err := gossh.NewSignerFromKey(private)
+			if err != nil {
+				return err
+			}
+			cert, err = sshutil.CreateCertificate(cert, signer)
+			if err != nil {
+				return err
+			}
+			certBytes := gossh.MarshalAuthorizedKey(cert)
+			if err := storage.Store(ctx, filepath.Join(keyPath(keyName+"-cert.pub")...), certBytes); err != nil {
+				return err
+			}
 		}
 
 		// write 'em

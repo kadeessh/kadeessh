@@ -9,10 +9,11 @@ import (
 
 func Test_loadOrGenerateAndStore(t *testing.T) {
 	type args struct {
-		ctx       context.Context
-		storage   certmagic.Storage
-		keyName   string
-		generator func() privateKey
+		ctx        context.Context
+		storage    certmagic.Storage
+		keyName    string
+		generator  func() privateKey
+		principals []string
 	}
 
 	tempDir := t.TempDir()
@@ -74,7 +75,7 @@ func Test_loadOrGenerateAndStore(t *testing.T) {
 	}
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := loadOrGenerateAndStore(tt.args.ctx, tt.args.storage, tt.args.keyName, tt.args.generator, &signersBytes); (err != nil) != tt.wantErr {
+			if err := loadOrGenerateAndStore(tt.args.ctx, tt.args.storage, tt.args.keyName, tt.args.generator, &signersBytes, tt.args.principals); (err != nil) != tt.wantErr {
 				t.Errorf("loadOrGenerateAndStore() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if len(signersBytes) != i+1 {

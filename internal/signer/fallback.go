@@ -138,6 +138,7 @@ func loadOrGenerateAndStore(ctx context.Context, storage certmagic.Storage, keyN
 				return err
 			}
 			sshutilCert.ValidAfter = uint64(time.Now().UTC().Unix())
+			sshutilCert.ValidBefore = uint64(time.Now().UTC().Add(time.Hour * 24 * 365).Unix()) // valid for 1 year
 			cert := sshutilCert.GetCertificate()
 			signer, err := gossh.NewSignerFromKey(private)
 			if err != nil {

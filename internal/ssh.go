@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"strconv"
 	"time"
 
@@ -333,13 +334,17 @@ func (app *SSH) Start() error {
 	app.errGroup = &errgroup.Group{}
 	for _, srv := range app.servers {
 		netadd, _ := caddy.ParseNetworkAddress(srv.Addr)
-		ln, err := caddy.Listen("tcp", netadd.JoinHostPort(0))
+		ln, err := netadd.Listen(app.ctx, 0, net.ListenConfig{})
 		if err != nil {
+			return fmt.Errorf("ssh: listening on %s: %v", srv.Addr, err)
+		}
+		l, ok := ln.(net.Listener)
+		if !ok {
 			return fmt.Errorf("ssh: listening on %s: %v", srv.Addr, err)
 		}
 		srv := srv
 		app.errGroup.Go(func() error {
-			return srv.Serve(ln)
+			return srv.Serve(l)
 		})
 	}
 	return nil

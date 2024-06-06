@@ -111,4 +111,4 @@ jobs:
           version: latest
           args: check
         env:
-          TAG: ${{ steps.vars.outputs.version_tag }}
+          TAG: ${{ steps.vars.outputs.short_sha }}

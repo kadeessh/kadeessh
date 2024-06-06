@@ -13,27 +13,24 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest ]
-        go: [ '1.20' ]
-        include:
-        # Set the minimum Go patch version for the given Go minor
-        # Usable via ${{ matrix.GO_SEMVER }}
-        - go: '1.20'
-          GO_SEMVER: '~1.20.1'
+        go: [ '1.22' ]
+        
     runs-on: ${{ matrix.os }}
     permissions:
       id-token: write
       # https://docs.github.com/en/rest/overview/permissions-required-for-github-apps#permission-on-contents
       # "Releases" is part of `contents`, so it needs the `write`
       contents: write
+
     steps:
     - name: Install Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v5
       with:
-        go-version: ${{ matrix.GO_SEMVER }}
+        go-version: ${{ matrix.go }}
         check-latest: true
 
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -79,7 +76,7 @@ jobs:
         go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 
     - name: Cache the build cache
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         # In order:
         # * Module download cache
@@ -93,10 +90,10 @@ jobs:
 
     # GoReleaser will take care of publishing those artifacts into the release
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v2
+      uses: goreleaser/goreleaser-action@v6
       with:
         version: latest
-        args: release --rm-dist
+        args: release --clean --timeout 60m
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         TAG: ${{ steps.vars.outputs.version_tag }}

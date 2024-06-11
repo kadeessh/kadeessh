@@ -8,7 +8,7 @@ require (
 	github.com/caddyserver/certmagic v0.20.0
 	github.com/creack/pty v1.1.18
 	github.com/google/uuid v1.6.0
-	github.com/msteinert/pam v1.1.0
+	github.com/msteinert/pam/v2 v2.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.13.6
 	github.com/tweekmonster/luser v0.0.0-20161003172636-3fa38070dbd7

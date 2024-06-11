@@ -10,7 +10,7 @@ import (
 	"github.com/caddyserver/caddy/v2"
 	"github.com/kadeessh/kadeessh/internal/authentication"
 	"github.com/kadeessh/kadeessh/internal/session"
-	"github.com/msteinert/pam"
+	pam "github.com/msteinert/pam/v2"
 	"go.uber.org/zap"
 )
 
@@ -54,17 +54,23 @@ func (pm OS) AuthenticateUser(sshctx session.ConnMetadata, password []byte) (aut
 		}
 	})
 	if err != nil {
-		pm.logger.Warn("error StartFunc", zap.Error(err))
+		pm.logger.Warn("error starting PAM transaction", zap.Error(err))
 		return nil, false, err
 	}
+	defer func() {
+		err = t.End()
+		if err != nil {
+			pm.logger.Warn("error closing PAM transaction", zap.Error(err))
+		}
+	}()
 	err = t.Authenticate(0)
 	if err != nil {
-		pm.logger.Warn("error Authenticate", zap.Error(err))
+		pm.logger.Warn("error PAM authentication", zap.Error(err))
 		return nil, false, err
 	}
 	err = t.AcctMgmt(0)
 	if err != nil {
-		pm.logger.Warn("error Pam AcctMgmt", zap.Error(err))
+		pm.logger.Warn("error PAM account validation", zap.Error(err))
 		return nil, false, err
 	}
 	u, err := user.Lookup(sshctx.User())

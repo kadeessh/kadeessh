@@ -68,8 +68,8 @@ func (paf PasswordAuthFlow) callback(ctx session.Context) func(conn gossh.ConnMe
 			paf.invalidCredentials(conn)
 			return nil, invalidCredentials
 		}
-		for name, auther := range paf.providers { //nolint:golint,misspell
-			user, authed, err := auther.AuthenticateUser(conn, password)
+		for name, provider := range paf.providers { //nolint:golint,misspell
+			user, authed, err := provider.AuthenticateUser(conn, password)
 			if err != nil {
 				paf.authError(conn, name, err)
 				continue

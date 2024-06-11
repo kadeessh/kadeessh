@@ -9,9 +9,7 @@ import (
 	gossh "golang.org/x/crypto/ssh"
 )
 
-var (
-	_ caddy.Provisioner = (*PublicKeyFlow)(nil)
-)
+var _ caddy.Provisioner = (*PublicKeyFlow)(nil)
 
 func init() {
 	caddy.RegisterModule(PublicKeyFlow{})
@@ -63,8 +61,8 @@ func (pk *PublicKeyFlow) Provision(ctx caddy.Context) error {
 func (pk PublicKeyFlow) callback(ctx session.Context) func(conn gossh.ConnMetadata, key gossh.PublicKey) (*gossh.Permissions, error) {
 	return func(conn gossh.ConnMetadata, key gossh.PublicKey) (*gossh.Permissions, error) {
 		pk.authStart(conn, len(pk.providers), ctx.RemoteAddr(), zap.String("key_type", key.Type()))
-		for name, auther := range pk.providers { //nolint:golint,misspell
-			user, authed, err := auther.AuthenticateUser(conn, key)
+		for name, provider := range pk.providers { //nolint:golint,misspell
+			user, authed, err := provider.AuthenticateUser(conn, key)
 			if err != nil {
 				pk.authError(conn, name, err, zap.String("key_type", key.Type()))
 				continue

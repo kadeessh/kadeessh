@@ -17,13 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, macos-latest]
-        go: [ '1.20' ]
-
-        include:
-        # Set the minimum Go patch version for the given Go minor
-        # Usable via ${{ matrix.GO_SEMVER }}
-        - go: '1.20'
-          GO_SEMVER: '~1.20.1'
+        go: [ '1.22' ]
 
         # Set some variables per OS, usable via ${{ matrix.VAR }}
         # CADDY_BIN_PATH: the path to the compiled Caddy binary, for artifact publishing
@@ -41,13 +35,13 @@ jobs:
 
     steps:
     - name: Install Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v5
       with:
-        go-version: ${{ matrix.GO_SEMVER }}
+        go-version: ${{ matrix.go }}
         check-latest: true
 
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Print Go version and environment
       id: vars
@@ -64,7 +58,7 @@ jobs:
         echo "::set-output name=go_cache::$(go env GOCACHE)"
 
     - name: Cache the build cache
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         # In order:
         # * Module download cache
@@ -92,7 +86,7 @@ jobs:
         $(go env GOPATH)/bin/xcaddy build --with github.com/kadeessh/kadeessh=. --output kadeessh
 
     - name: Publish Build Artifact
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: kadeessh_${{ runner.os }}_go${{ matrix.go }}_${{ steps.vars.outputs.short_sha }}
         path: kadeessh
@@ -110,11 +104,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       
-      - uses: goreleaser/goreleaser-action@v2
+      - uses: goreleaser/goreleaser-action@v6
         with:
           version: latest
           args: check
         env:
-          TAG: ${{ steps.vars.outputs.version_tag }}
+          TAG: ${{ steps.vars.outputs.short_sha }}

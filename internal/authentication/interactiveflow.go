@@ -60,8 +60,8 @@ func (upf *InteractiveFlow) Provision(ctx caddy.Context) error {
 func (upf InteractiveFlow) callback(ctx session.Context) func(conn gossh.ConnMetadata, client gossh.KeyboardInteractiveChallenge) (*gossh.Permissions, error) {
 	return func(conn gossh.ConnMetadata, client gossh.KeyboardInteractiveChallenge) (*gossh.Permissions, error) {
 		upf.authStart(conn, len(upf.providers), ctx.RemoteAddr())
-		for name, auther := range upf.providers { //nolint:golint,misspell
-			user, authed, err := auther.AuthenticateUser(conn, client)
+		for name, provider := range upf.providers {
+			user, authed, err := provider.AuthenticateUser(conn, client)
 			if err != nil {
 				upf.authError(conn, name, err)
 				continue

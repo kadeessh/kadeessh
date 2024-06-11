@@ -185,7 +185,7 @@ Reference:
           ],
           "localforward": {
             "forward": "allow"
-          },
+          }
         }
       }
     }

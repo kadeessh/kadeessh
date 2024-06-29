@@ -7,6 +7,7 @@ import (
 	_ "github.com/kadeessh/kadeessh/internal/authentication/os"
 	_ "github.com/kadeessh/kadeessh/internal/authentication/static"
 	_ "github.com/kadeessh/kadeessh/internal/authorization"
+	_ "github.com/kadeessh/kadeessh/internal/banner"
 	_ "github.com/kadeessh/kadeessh/internal/signer"
 	_ "github.com/kadeessh/kadeessh/internal/subsystem"
 )

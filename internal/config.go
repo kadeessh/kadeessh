@@ -32,6 +32,11 @@ type SignerConfigurator interface {
 	Configure(session.Context, SignerAdder)
 }
 
+// BannerGenerator interface is an abstraction so banner modules can configure *ServerConfig of golang.org/x/crypto/ssh
+type BannerGenerator interface {
+	RenderingCallback(session.Context) session.BannerCallback
+}
+
 // Configurator holds the set of matchers and configurators that will apply custom server
 // configurations if matched
 type Configurator struct {
@@ -157,11 +162,10 @@ type ProvidedConfig struct {
 	// "SSH-2.0-".
 	ServerVersion string `json:"server_version,omitempty"`
 
-	// TODO: both
+	// BannerRaw holds the configuration for the banner generator module
+	BannerRaw json.RawMessage `json:"banner,omitempty"  caddy:"namespace=ssh.banner inline_key=engine"`
+	banner    BannerGenerator
 
-	// BannerCallback, if present, is called and the return string is sent to
-	// the client after key exchange completed but before authentication.
-	bannerCallback func(conn gossh.ConnMetadata) string
 	// GSSAPIWithMICConfig includes gssapi server and callback, which if both non-nil, is used
 	// when gssapi-with-mic authentication is selected (RFC 4462 section 3).
 	gSSAPIWithMICConfig *gossh.GSSAPIWithMICConfig
@@ -202,6 +206,13 @@ func (c *ProvidedConfig) Provision(ctx caddy.Context) error {
 	}
 	c.signer = gosshSigner
 
+	if len(c.BannerRaw) != 0 {
+		bannerRaw, err := ctx.LoadModule(c, "BannerRaw")
+		if err != nil {
+			return fmt.Errorf("error loading banner module: %v", err)
+		}
+		c.banner = bannerRaw.(BannerGenerator)
+	}
 	return nil
 }
 
@@ -218,8 +229,10 @@ func (c *ProvidedConfig) ServerConfigCallback(ctx session.Context) *gossh.Server
 		MaxAuthTries:        c.MaxAuthTries,
 		AuthLogCallback:     c.authLogCallback,
 		ServerVersion:       c.ServerVersion,
-		BannerCallback:      c.bannerCallback,
 		GSSAPIWithMICConfig: c.gSSAPIWithMICConfig,
+	}
+	if c.banner != nil {
+		cfg.BannerCallback = c.banner.RenderingCallback(ctx)
 	}
 
 	if c.Authentication != nil {

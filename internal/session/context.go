@@ -11,7 +11,7 @@ import (
 // For compatibility reasons
 var _ ssh.Context = Context(nil)
 
-// ConnMetadata is our own interface compatible with ConnMetadata of github.com/gliderlabs/ssh
+// Context is our own interface compatible with Context of github.com/gliderlabs/ssh
 // to define our modules' requirements against an internal interface rather than external
 type Context interface {
 	// ssh.Context

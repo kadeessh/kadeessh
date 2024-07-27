@@ -11,10 +11,12 @@ import (
 	"go.uber.org/zap"
 )
 
-var _ ConfigMatcher = ConfigMatcherSet{}
-var _ ConfigMatcher = MatchConfigRemoteIP{}
-var _ ConfigMatcher = MatchConfigLocalIP{}
-var _ ConfigMatcher = MatchConfigNot{}
+var (
+	_ ConfigMatcher = ConfigMatcherSet{}
+	_ ConfigMatcher = MatchConfigRemoteIP{}
+	_ ConfigMatcher = MatchConfigLocalIP{}
+	_ ConfigMatcher = MatchConfigNot{}
+)
 
 func init() {
 	caddy.RegisterModule(MatchConfigRemoteIP{})
@@ -22,7 +24,7 @@ func init() {
 	caddy.RegisterModule(MatchConfigLocalIP{})
 }
 
-// ConfigMatcher should return true if the the connection needs to be configured by the accompanying set
+// ConfigMatcher should return true if the connection needs to be configured by the accompanying set
 type ConfigMatcher interface {
 	ShouldConfigure(session.ConnConfigMatchingContext) bool
 }

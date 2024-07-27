@@ -117,5 +117,7 @@ func (c *Chained) Authorize(sess session.Session) (DeauthorizeFunc, bool, error)
 	}, true, nil
 }
 
-var _ caddy.Provisioner = (*Chained)(nil)
-var _ Authorizer = (*Chained)(nil)
+var (
+	_ caddy.Provisioner = (*Chained)(nil)
+	_ Authorizer        = (*Chained)(nil)
+)

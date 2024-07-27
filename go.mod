@@ -1,6 +1,6 @@
 module github.com/kadeessh/kadeessh
 
-go 1.21
+go 1.22
 
 require (
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
@@ -14,7 +14,7 @@ require (
 	github.com/tweekmonster/luser v0.0.0-20161003172636-3fa38070dbd7
 	go.step.sm/crypto v0.47.0
 	go.uber.org/multierr v1.11.0
-	go.uber.org/zap v1.25.0
+	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.24.0
 	golang.org/x/sync v0.7.0
 )

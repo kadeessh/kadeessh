@@ -11,13 +11,15 @@ import (
 	"go.uber.org/zap"
 )
 
-var _ ActorMatcher = ActorMatcherSet{}
-var _ ActorMatcher = MatchRemoteIP{}
-var _ ActorMatcher = MatchNot{}
-var _ ActorMatcher = MatchUser{}
-var _ ActorMatcher = MatchGroup{}
-var _ ActorMatcher = MatchExtension{}
-var _ ActorMatcher = MatchCriticalOption{}
+var (
+	_ ActorMatcher = ActorMatcherSet{}
+	_ ActorMatcher = MatchRemoteIP{}
+	_ ActorMatcher = MatchNot{}
+	_ ActorMatcher = MatchUser{}
+	_ ActorMatcher = MatchGroup{}
+	_ ActorMatcher = MatchExtension{}
+	_ ActorMatcher = MatchCriticalOption{}
+)
 
 func init() {
 	caddy.RegisterModule(MatchRemoteIP{})

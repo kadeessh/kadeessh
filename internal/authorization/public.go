@@ -39,6 +39,8 @@ func (ms *Public) deauthorize(session.Session) error {
 	return nil
 }
 
-var _ caddy.Module = (*Public)(nil)
-var _ caddy.Provisioner = (*Public)(nil)
-var _ Authorizer = (*Public)(nil)
+var (
+	_ caddy.Module      = (*Public)(nil)
+	_ caddy.Provisioner = (*Public)(nil)
+	_ Authorizer        = (*Public)(nil)
+)

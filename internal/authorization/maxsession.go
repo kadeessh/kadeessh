@@ -81,10 +81,13 @@ func (ms *MaxSession) deauthorize(sess session.Session) error {
 func (ss *MaxSession) increment() uint64 {
 	return atomic.AddUint64(&ss.currentSessionCount, 1)
 }
+
 func (ss *MaxSession) decrement() uint64 {
 	return atomic.AddUint64(&ss.currentSessionCount, ^uint64(0))
 }
 
-var _ caddy.Module = (*MaxSession)(nil)
-var _ caddy.Provisioner = (*MaxSession)(nil)
-var _ Authorizer = (*MaxSession)(nil)
+var (
+	_ caddy.Module      = (*MaxSession)(nil)
+	_ caddy.Provisioner = (*MaxSession)(nil)
+	_ Authorizer        = (*MaxSession)(nil)
+)

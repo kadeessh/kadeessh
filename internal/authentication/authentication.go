@@ -102,7 +102,7 @@ func (a authenticatorLogger) authFailed(ctx session.ConnMetadata, providerName s
 	)
 }
 
-func (a authenticatorLogger) authSuccessful(ctx session.ConnMetadata, providerName string, user User, fields ...zapcore.Field) {
+func (a authenticatorLogger) authSuccessful(_ session.ConnMetadata, providerName string, user User, fields ...zapcore.Field) {
 	fields = append([]zapcore.Field{
 		zap.String("provider", providerName),
 		zap.String("user_id", user.Uid()),

@@ -22,9 +22,11 @@ type privateKey interface {
 func pemEncode(private crypto.PrivateKey) (*pem.Block, error) {
 	return pemutil.SerializeOpenSSHPrivateKey(private, pemutil.WithComment("kadeessh"))
 }
+
 func pemBytes(p *pem.Block) []byte {
 	return pem.EncodeToMemory(p)
 }
+
 func encodePublicKey(p crypto.PublicKey) ([]byte, error) {
 	sp, err := gossh.NewPublicKey(p)
 	if err != nil {

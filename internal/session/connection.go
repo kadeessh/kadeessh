@@ -32,3 +32,5 @@ type ConnMetadata interface {
 	// LocalAddr returns the local address for this connection.
 	LocalAddr() net.Addr
 }
+
+type BannerCallback func(conn ssh.ConnMetadata) string

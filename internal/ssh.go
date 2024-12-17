@@ -143,7 +143,7 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 
 		{
 			// default to disable for strict reasons
-			if srv.AuthorizeRaw == nil || len(srv.AuthorizeRaw) == 0 {
+			if len(srv.AuthorizeRaw) == 0 {
 				srv.AuthorizeRaw = json.RawMessage(
 					[]byte(`{"authorizer": "public" }`),
 				)
@@ -160,7 +160,7 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 		}
 		{
 			// default to disable for strict reasons
-			if srv.LocalForwardRaw == nil || len(srv.LocalForwardRaw) == 0 {
+			if len(srv.LocalForwardRaw) == 0 {
 				srv.LocalForwardRaw = json.RawMessage(
 					[]byte(`{"forward": "deny" }`),
 				)
@@ -177,7 +177,7 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 		}
 		{
 			// default to disable for strict reasons
-			if srv.ReverseForwardRaw == nil || len(srv.ReverseForwardRaw) == 0 {
+			if len(srv.ReverseForwardRaw) == 0 {
 				srv.ReverseForwardRaw = json.RawMessage(
 					[]byte(`{"forward": "deny" }`),
 				)
@@ -194,7 +194,7 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 		}
 		{
 			// default to disable for strict reasons
-			if srv.PtyAskRaw == nil || len(srv.PtyAskRaw) == 0 {
+			if len(srv.PtyAskRaw) == 0 {
 				srv.PtyAskRaw = json.RawMessage(
 					[]byte(`{"pty": "deny" }`),
 				)
@@ -230,7 +230,7 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 			sshsrv := &sshServer{
 				Server: &ssh.Server{
 					// used in this manner to preserve the *relative* NetworkAddress
-					Addr:                          caddy.JoinNetworkAddress(add.Network, add.Host, strconv.Itoa(int(srv.listenRange.StartPort+portOffset))),
+					Addr:                          caddy.JoinNetworkAddress(add.Network, add.Host, strconv.Itoa(int(srv.listenRange.StartPort+portOffset))), //nolint:gosec
 					IdleTimeout:                   time.Duration(srv.IdleTimeout),
 					MaxTimeout:                    time.Duration(srv.MaxTimeout),
 					LocalPortForwardingCallback:   srv.localForward.Allow,
@@ -342,7 +342,6 @@ func (app *SSH) Start() error {
 		if !ok {
 			return fmt.Errorf("ssh: listening on %s: %v", srv.Addr, err)
 		}
-		srv := srv
 		app.errGroup.Go(func() error {
 			return srv.Serve(l)
 		})

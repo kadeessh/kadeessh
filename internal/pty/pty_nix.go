@@ -92,8 +92,9 @@ func (s Shell) openPty(sess session.Session) (sshPty, error) {
 	f, err := pty.StartWithAttrs(execCmd, &pty.Winsize{}, &syscall.SysProcAttr{
 		Setsid: true,
 		Credential: &syscall.Credential{
+			//nolint:gosec
 			Uid:         uint32(user.UID), // <-- other user's ID
-			Gid:         uint32(user.GID),
+			Gid:         uint32(user.GID), //nolint:gosec
 			NoSetGroups: true,
 		},
 	})

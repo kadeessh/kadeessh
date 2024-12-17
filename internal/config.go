@@ -192,7 +192,7 @@ func (c *ProvidedConfig) Provision(ctx caddy.Context) error {
 
 	// default to the `fallback` module, which checks storage for the
 	// keys and generates them if missing.
-	if c.SignerRaw == nil || len(c.SignerRaw) == 0 {
+	if len(c.SignerRaw) == 0 {
 		c.SignerRaw = json.RawMessage(`{"module": "fallback" }`)
 	}
 	signerIface, err := ctx.LoadModule(c, "SignerRaw")

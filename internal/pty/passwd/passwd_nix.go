@@ -17,13 +17,13 @@ func parse(line string) (*Entry, error) {
 	if err != nil {
 		return nil, err
 	}
-	uID := uint(uid)
+	uID := uint(uid) //nolint:gosec
 
 	gid, err := strconv.Atoi(entryParts[3])
 	if err != nil {
 		return nil, err
 	}
-	gID := uint(gid)
+	gID := uint(gid) //nolint:gosec
 
 	return &Entry{
 		Username: entryParts[0],

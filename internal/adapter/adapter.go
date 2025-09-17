@@ -12,8 +12,8 @@ import (
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig"
-	internalcaddyssh "github.com/mohammed90/caddy-ssh/internal"
-	"github.com/mohammed90/caddy-ssh/internal/authentication"
+	internalcaddyssh "github.com/kadeessh/kadeessh/internal"
+	"github.com/kadeessh/kadeessh/internal/authentication"
 )
 
 func init() {

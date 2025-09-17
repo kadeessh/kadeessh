@@ -9,8 +9,8 @@ import (
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/google/uuid"
-	"github.com/mohammed90/caddy-ssh/internal/authentication"
-	"github.com/mohammed90/caddy-ssh/internal/session"
+	"github.com/kadeessh/kadeessh/internal/authentication"
+	"github.com/kadeessh/kadeessh/internal/session"
 	"go.uber.org/zap"
 )
 
@@ -22,8 +22,6 @@ type Static struct {
 	// The algorithm with which the passwords are hashed. Default: bcrypt
 	HashRaw json.RawMessage `json:"hash,omitempty" caddy:"namespace=http.authentication.hashes inline_key=algorithm"`
 
-	Groups map[string]group
-
 	// The list of accounts to authenticate.
 	Accounts []Account `json:"accounts,omitempty"`
 
@@ -33,6 +31,10 @@ type Static struct {
 	logger *zap.Logger
 }
 
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (Static) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "ssh.authentication.providers.password.static",
@@ -40,6 +42,8 @@ func (Static) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision of the Static authentication provider loads up the hasher, if defined or defaults to bcrypt, and validate
+// process the user list (e,g. generate IDs if absent).
 func (up *Static) Provision(ctx caddy.Context) error {
 	up.logger = ctx.Logger(up)
 	if up.HashRaw == nil {
@@ -101,6 +105,9 @@ func (up *Static) Provision(ctx caddy.Context) error {
 	return nil
 }
 
+// AuthenticateUser in the Static authentication provider looks up the user in the in-memory map and checks for match in the password hash. If
+// successful, the method returns the user account as an implementation of authentication.User and true; otherwise, the method returns empty account value,
+// false, and an error.
 func (up Static) AuthenticateUser(sshctx session.ConnMetadata, password []byte) (authentication.User, bool, error) {
 	username := sshctx.User()
 	if username == "" {

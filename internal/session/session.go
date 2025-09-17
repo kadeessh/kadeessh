@@ -3,10 +3,11 @@ package session
 import (
 	"io"
 
-	"github.com/mohammed90/caddy-ssh/internal/ssh"
+	"github.com/kadeessh/kadeessh/internal/ssh"
 )
 
-// Session is similar to gliderlab/ssh.Session but without the Exit method.
+// Session is similar to Session interface from github.com/gliderlab/ssh but without the Exit method to prevent
+// actors from closing the session
 type Session interface {
 	ActorMatchingContext
 

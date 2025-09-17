@@ -4,14 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
+	"strconv"
 	"time"
 
 	"github.com/caddyserver/caddy/v2"
-	"github.com/mohammed90/caddy-ssh/internal/localforward"
-	caddypty "github.com/mohammed90/caddy-ssh/internal/pty"
-	"github.com/mohammed90/caddy-ssh/internal/reverseforward"
-	"github.com/mohammed90/caddy-ssh/internal/ssh"
-	"github.com/mohammed90/caddy-ssh/internal/subsystem"
+	"github.com/kadeessh/kadeessh/internal/authorization"
+	"github.com/kadeessh/kadeessh/internal/localforward"
+	caddypty "github.com/kadeessh/kadeessh/internal/pty"
+	"github.com/kadeessh/kadeessh/internal/reverseforward"
+	"github.com/kadeessh/kadeessh/internal/ssh"
+	"github.com/kadeessh/kadeessh/internal/subsystem"
 	"go.uber.org/zap"
 	gossh "golang.org/x/crypto/ssh"
 	"golang.org/x/sync/errgroup"
@@ -25,37 +28,83 @@ type caddySshServerCtxKey string
 
 const CtxServerName caddySshServerCtxKey = "CtxServerName"
 
-// SSH provides Public Key Infrastructure facilities for Caddy.
+// SSH is the app providing ssh services
 type SSH struct {
-	GracePeriod   caddy.Duration     `json:"grace_period,omitempty"`
+	// GracePeriod is the duration a server should wait for open connections to close during shutdown
+	// before closing them forcefully
+	GracePeriod caddy.Duration `json:"grace_period,omitempty"`
+
+	// The set of ssh servers keyed by custom names
 	Servers       map[string]*Server `json:"servers,omitempty"`
-	servers       []*ssh.Server
+	servers       []*sshServer
 	serverIndexer map[string][]int // maps server name to the indices in the `servers` field
 	errGroup      *errgroup.Group
 	ctx           caddy.Context
 	log           *zap.Logger
 }
 
+type sshServer struct {
+	*ssh.Server
+}
+
 type Server struct {
+	// Socket addresses to which to bind listeners. Accepts
+	// [network addresses](/docs/conventions#network-addresses)
+	// that may include port ranges. Listener addresses must
+	// be unique; they cannot be repeated across all defined
+	// servers. TCP is the only acceptable network (for now, perhaps).
 	Address string `json:"address,omitempty"`
 
+	// The configuration of local-forward permission module. The config structure is:
+	// "localforward": {
+	// 		"forward": "<module name>"
+	// 		... config
+	// }
+	// defaults to: { "forward": "deny" }
 	LocalForwardRaw json.RawMessage                  `json:"localforward,omitempty" caddy:"namespace=ssh.ask.localforward inline_key=forward"`
 	localForward    localforward.PortForwardingAsker `json:"-"`
 
+	// The configuration of reverse-forward permission module. The config structure is:
+	// "reverseforward": {
+	// 		"forward": "<module name>"
+	// 		... config
+	// }
+	// defaults to: { "reverseforward": "deny" }
 	ReverseForwardRaw json.RawMessage                    `json:"reverseforward,omitempty" caddy:"namespace=ssh.ask.reverseforward inline_key=forward"`
 	reverseForward    reverseforward.PortForwardingAsker `json:"-"`
 
+	// The configuration of PTY permission module. The config structure is:
+	// "pty": {
+	// 		"pty": "<module name>"
+	// 		... config
+	// }
+	// defaults to: { "forward": "deny" }
 	PtyAskRaw json.RawMessage   `json:"pty,omitempty" caddy:"namespace=ssh.ask.pty inline_key=pty"`
 	ptyAsk    caddypty.PtyAsker `json:"-"`
 
+	// connection timeout when no activity, none if empty
 	IdleTimeout caddy.Duration `json:"idle_timeout,omitempty"`
-	MaxTimeout  caddy.Duration `json:"max_timeout,omitempty"`
+	// absolute connection timeout, none if empty
+	MaxTimeout caddy.Duration `json:"max_timeout,omitempty"`
 
+	// The configuration of the authorizer module. The config structure is:
+	// "authorize": {
+	// 		"authorizer": "<module name>"
+	// 		... config
+	// }
+	// default to: { "authorizer": "public" }.
+	AuthorizeRaw json.RawMessage `json:"authorize,omitempty" caddy:"namespace=ssh.session.authorizers inline_key=authorizer"`
+	authorizer   authorization.Authorizer
+
+	// The list of defined subsystems in a json structure keyed by the arbitrary name of the subsystem.
+	// TODO: The current implementation is naive and can be expanded to follow the Authorzation and Actors model
 	SubsystemRaw caddy.ModuleMap              `json:"subsystems,omitempty" caddy:"namespace=ssh.subsystem"`
 	subsystems   map[string]subsystem.Handler `json:"-"`
 
+	// List of configurators that could configure the server per matchers and config providers
 	Config ConfigList `json:"configs,omitempty"`
 
+	// The actors that can act on a session per the matching criteria
 	Actors ActorList `json:"actors,omitempty"`
 
 	name        string
@@ -63,7 +112,10 @@ type Server struct {
 	logger      *zap.Logger
 }
 
-// CaddyModule returns the Caddy module information.
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (SSH) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "ssh",
@@ -91,7 +143,24 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 
 		{
 			// default to disable for strict reasons
-			if srv.LocalForwardRaw == nil || len(srv.LocalForwardRaw) == 0 {
+			if len(srv.AuthorizeRaw) == 0 {
+				srv.AuthorizeRaw = json.RawMessage(
+					[]byte(`{"authorizer": "public" }`),
+				)
+			}
+			mods, err := ctx.LoadModule(srv, "AuthorizeRaw")
+			if err != nil {
+				return fmt.Errorf("loading authorizer callback: %v", err)
+			}
+			authorizer, ok := mods.(authorization.Authorizer)
+			if !ok {
+				return fmt.Errorf("loading authorizer callback: specified callback is not authorization.Authorizer")
+			}
+			srv.authorizer = authorizer
+		}
+		{
+			// default to disable for strict reasons
+			if len(srv.LocalForwardRaw) == 0 {
 				srv.LocalForwardRaw = json.RawMessage(
 					[]byte(`{"forward": "deny" }`),
 				)
@@ -106,10 +175,9 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 			}
 			srv.localForward = lforwarder
 		}
-
 		{
 			// default to disable for strict reasons
-			if srv.ReverseForwardRaw == nil || len(srv.ReverseForwardRaw) == 0 {
+			if len(srv.ReverseForwardRaw) == 0 {
 				srv.ReverseForwardRaw = json.RawMessage(
 					[]byte(`{"forward": "deny" }`),
 				)
@@ -126,7 +194,7 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 		}
 		{
 			// default to disable for strict reasons
-			if srv.PtyAskRaw == nil || len(srv.PtyAskRaw) == 0 {
+			if len(srv.PtyAskRaw) == 0 {
 				srv.PtyAskRaw = json.RawMessage(
 					[]byte(`{"pty": "deny" }`),
 				)
@@ -151,7 +219,6 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 				srv.subsystems[modName] = modIface.(subsystem.Handler)
 			}
 		}
-
 		if err := srv.Config.Provision(ctx); err != nil {
 			return err
 		}
@@ -159,22 +226,24 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 		if err := srv.Actors.Provision(ctx); err != nil {
 			return err
 		}
-
 		for portOffset := uint(0); portOffset < srv.listenRange.PortRangeSize(); portOffset++ {
-			sshsrv := &ssh.Server{
-				Addr:                          srv.listenRange.JoinHostPort(portOffset),
-				IdleTimeout:                   time.Duration(srv.IdleTimeout),
-				MaxTimeout:                    time.Duration(srv.MaxTimeout),
-				LocalPortForwardingCallback:   srv.localForward.Allow,
-				ReversePortForwardingCallback: srv.reverseForward.Allow,
-				PtyCallback:                   srv.ptyAsk.Allow,
-				ServerConfigCallback: func(ctx ssh.Context) *gossh.ServerConfig {
-					for _, cfger := range srv.Config {
-						if cfger.MatcherSets.AnyMatch(ctx) {
-							return cfger.Configurator.ServerConfigCallback(ctx)
+			sshsrv := &sshServer{
+				Server: &ssh.Server{
+					// used in this manner to preserve the *relative* NetworkAddress
+					Addr:                          caddy.JoinNetworkAddress(add.Network, add.Host, strconv.Itoa(int(srv.listenRange.StartPort+portOffset))), //nolint:gosec
+					IdleTimeout:                   time.Duration(srv.IdleTimeout),
+					MaxTimeout:                    time.Duration(srv.MaxTimeout),
+					LocalPortForwardingCallback:   srv.localForward.Allow,
+					ReversePortForwardingCallback: srv.reverseForward.Allow,
+					PtyCallback:                   srv.ptyAsk.Allow,
+					ServerConfigCallback: func(ctx ssh.Context) *gossh.ServerConfig {
+						for _, cfger := range srv.Config {
+							if cfger.matcherSets.AnyMatch(ctx) {
+								return cfger.configurator.ServerConfigCallback(ctx)
+							}
 						}
-					}
-					return &gossh.ServerConfig{}
+						return &gossh.ServerConfig{}
+					},
 				},
 			}
 			if srv.localForward != nil || srv.reverseForward != nil {
@@ -191,7 +260,6 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 				sshsrv.RequestHandlers["cancel-tcpip-forward"] = forwardHandler.HandleSSHRequest
 				sshsrv.ChannelHandlers["direct-tcpip"] = ssh.DirectTCPIPHandler
 			}
-
 			if len(srv.subsystems) > 0 {
 				sshsrv.SubsystemHandlers = make(map[string]ssh.SubsystemHandler)
 			}
@@ -200,13 +268,27 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 					hndler.Handle(s)
 				}
 			}
-
 			sshsrv.Handle(func(sess ssh.Session) {
-				srv.logger.Info("session started",
-					zap.String("user", sess.User()),
-					zap.String("remote_ip", sess.RemoteAddr().String()),
-					zap.String("session_id", sess.Context().Value(ssh.ContextKeySessionID).(string)),
-				)
+				var deauth authorization.DeauthorizeFunc
+				var ok bool
+				if deauth, ok, err = srv.authorizer.Authorize(sess); !ok && err == nil {
+					srv.logger.Info("session not authorized",
+						zap.String("user", sess.User()),
+						zap.String("remote_ip", sess.RemoteAddr().String()),
+						zap.String("session_id", sess.Context().Value(ssh.ContextKeySessionID).(string)),
+					)
+					return
+				} else if err != nil {
+					srv.logger.Error("error on session authorization",
+						zap.String("user", sess.User()),
+						zap.String("remote_ip", sess.RemoteAddr().String()),
+						zap.String("session_id", sess.Context().Value(ssh.ContextKeySessionID).(string)),
+						zap.Error(err),
+					)
+					return
+				}
+				// TODO: error checking
+				defer deauth(sess) // nolint
 
 				defer srv.logger.Info("session ended",
 					zap.String("user", sess.User()),
@@ -251,13 +333,17 @@ func (app *SSH) Provision(ctx caddy.Context) error {
 func (app *SSH) Start() error {
 	app.errGroup = &errgroup.Group{}
 	for _, srv := range app.servers {
-		ln, err := caddy.Listen("tcp", srv.Addr)
+		netadd, _ := caddy.ParseNetworkAddress(srv.Addr)
+		ln, err := netadd.Listen(app.ctx, 0, net.ListenConfig{})
 		if err != nil {
 			return fmt.Errorf("ssh: listening on %s: %v", srv.Addr, err)
 		}
-		srv := srv
+		l, ok := ln.(net.Listener)
+		if !ok {
+			return fmt.Errorf("ssh: listening on %s: %v", srv.Addr, err)
+		}
 		app.errGroup.Go(func() error {
-			return srv.Serve(ln)
+			return srv.Serve(l)
 		})
 	}
 	return nil

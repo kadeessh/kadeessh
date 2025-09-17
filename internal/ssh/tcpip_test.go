@@ -2,7 +2,7 @@ package ssh
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net"
 	"strconv"
 	"strings"
@@ -32,7 +32,8 @@ func newTestSessionWithForwarding(t *testing.T, forwardingEnabled bool) (net.Lis
 	l := sampleSocketServer()
 
 	_, client, cleanup := newTestSession(t, &Server{
-		Handler: func(s Session) {},
+		noClientAuth: true,
+		Handler:      func(s Session) {},
 		LocalPortForwardingCallback: func(ctx Context, destinationHost string, destinationPort uint32) bool {
 			addr := net.JoinHostPort(destinationHost, strconv.FormatInt(int64(destinationPort), 10))
 			if addr != l.Addr().String() {
@@ -58,7 +59,7 @@ func TestLocalPortForwardingWorks(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error connecting to %v: %v", l.Addr().String(), err)
 	}
-	result, err := ioutil.ReadAll(conn)
+	result, err := io.ReadAll(conn)
 	if err != nil {
 		t.Fatal(err)
 	}

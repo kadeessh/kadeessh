@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/mohammed90/caddy-ssh/internal/ssh"
+	"github.com/kadeessh/kadeessh/internal/ssh"
 )
 
 var (

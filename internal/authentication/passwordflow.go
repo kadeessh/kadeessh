@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/caddyserver/caddy/v2"
-	"github.com/mohammed90/caddy-ssh/internal/session"
+	"github.com/kadeessh/kadeessh/internal/session"
 
 	"go.uber.org/zap"
 	gossh "golang.org/x/crypto/ssh"
@@ -16,10 +16,11 @@ func init() {
 	caddy.RegisterModule(PasswordAuthFlow{})
 }
 
+// // PasswordAuthFlow holds the password-based authentication providers
 type PasswordAuthFlow struct {
 	authenticatorLogger `json:"-"`
 
-	// A set of authentication providers. If none are specified,
+	// A set of authentication providers implementing the UserPasswordAuthenticator interface. If none are specified,
 	// all requests will always be unauthenticated.
 	ProvidersRaw         caddy.ModuleMap                      `json:"providers,omitempty" caddy:"namespace=ssh.authentication.providers.password"`
 	PermitEmptyPasswords bool                                 `json:"permit_empty_passwords,omitempty"`
@@ -27,6 +28,10 @@ type PasswordAuthFlow struct {
 	logger               *zap.Logger
 }
 
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (paf PasswordAuthFlow) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID: "ssh.authentication.flows.password_auth",
@@ -36,6 +41,7 @@ func (paf PasswordAuthFlow) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision sets up and loads the providers of conforming to UserPasswordAuthenticator interface
 func (paf *PasswordAuthFlow) Provision(ctx caddy.Context) error {
 	paf.logger = ctx.Logger(paf)
 	paf.authenticatorLogger = authenticatorLogger{paf.logger}
@@ -62,8 +68,8 @@ func (paf PasswordAuthFlow) callback(ctx session.Context) func(conn gossh.ConnMe
 			paf.invalidCredentials(conn)
 			return nil, invalidCredentials
 		}
-		for name, auther := range paf.providers { //nolint:golint,misspell
-			user, authed, err := auther.AuthenticateUser(conn, password)
+		for name, provider := range paf.providers { //nolint:golint,misspell
+			user, authed, err := provider.AuthenticateUser(conn, password)
 			if err != nil {
 				paf.authError(conn, name, err)
 				continue

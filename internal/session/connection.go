@@ -9,6 +9,8 @@ import (
 // For compatibility reasons
 var _ ssh.ConnMetadata = ConnMetadata(nil)
 
+// ConnMetadata is our own interface compatible with ConnMetadata of golang.org/x/crypto/ssh
+// to define our modules' requirements against an internal interface rather than external
 type ConnMetadata interface {
 	// User returns the user ID for this connection.
 	User() string
@@ -30,3 +32,5 @@ type ConnMetadata interface {
 	// LocalAddr returns the local address for this connection.
 	LocalAddr() net.Addr
 }
+
+type BannerCallback func(conn ssh.ConnMetadata) string

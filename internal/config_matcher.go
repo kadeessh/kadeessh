@@ -7,26 +7,35 @@ import (
 	"strings"
 
 	"github.com/caddyserver/caddy/v2"
-	"github.com/mohammed90/caddy-ssh/internal/session"
+	"github.com/kadeessh/kadeessh/internal/session"
 	"go.uber.org/zap"
 )
 
-var _ ConfigMatcher = ConfigMatcherSet{}
-var _ ConfigMatcher = MatchConfigRemoteIP{}
-var _ ConfigMatcher = MatchConfigNot{}
+var (
+	_ ConfigMatcher = ConfigMatcherSet{}
+	_ ConfigMatcher = MatchConfigRemoteIP{}
+	_ ConfigMatcher = MatchConfigLocalIP{}
+	_ ConfigMatcher = MatchConfigNot{}
+)
 
 func init() {
 	caddy.RegisterModule(MatchConfigRemoteIP{})
 	caddy.RegisterModule(MatchConfigNot{})
+	caddy.RegisterModule(MatchConfigLocalIP{})
 }
 
+// ConfigMatcher should return true if the connection needs to be configured by the accompanying set
 type ConfigMatcher interface {
 	ShouldConfigure(session.ConnConfigMatchingContext) bool
 }
 
+// ConfigMatcherSet is a set of matchers which must all match in order for the session to be matched and the server is configured.
 type ConfigMatcherSet []ConfigMatcher
+
+// RawConfigMatcherSet is a group of matcher sets in their raw, JSON form.
 type RawConfigMatcherSet []caddy.ModuleMap
 
+// ShouldConfigure returns true if the session matches all matchers in ms or if there are no matchers.
 func (ms ConfigMatcherSet) ShouldConfigure(ctx session.ConnConfigMatchingContext) bool {
 	for _, m := range ms {
 		if !m.ShouldConfigure(ctx) {
@@ -36,8 +45,10 @@ func (ms ConfigMatcherSet) ShouldConfigure(ctx session.ConnConfigMatchingContext
 	return true
 }
 
+// ConfigMatcherSets is a group of matcher sets capable of checking whether a session matches any of the sets.
 type ConfigMatcherSets []ConfigMatcherSet
 
+// AnyMatch returns true if session matches any of the matcher sets in ms or if there are no matchers, in which case the request always matches.
 func (ms ConfigMatcherSets) AnyMatch(ctx session.ConnConfigMatchingContext) bool {
 	for _, m := range ms {
 		if m.ShouldConfigure(ctx) {
@@ -47,6 +58,7 @@ func (ms ConfigMatcherSets) AnyMatch(ctx session.ConnConfigMatchingContext) bool
 	return ms.Empty()
 }
 
+// Empty returns true if the set has no entries
 func (ms ConfigMatcherSets) Empty() bool {
 	return len(ms) == 0
 }
@@ -76,7 +88,10 @@ type MatchConfigRemoteIP struct {
 	logger *zap.Logger
 }
 
-// CaddyModule returns the Caddy module information.
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (MatchConfigRemoteIP) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "ssh.config_matchers.remote_ip",
@@ -146,7 +161,10 @@ type MatchConfigLocalIP struct {
 	logger *zap.Logger
 }
 
-// CaddyModule returns the Caddy module information.
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (MatchConfigLocalIP) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "ssh.config_matchers.local_ip",
@@ -220,8 +238,10 @@ func (m MatchConfigLocalIP) ShouldConfigure(ctx session.ConnConfigMatchingContex
 //
 // ```json
 // [
-// 	{},
-// 	{}
+//
+//	{},
+//	{}
+//
 // ]
 // ```
 //
@@ -232,7 +252,10 @@ type MatchConfigNot struct {
 	MatcherSets    []ConfigMatcherSet `json:"-"`
 }
 
-// CaddyModule returns the Caddy module information.
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (MatchConfigNot) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "ssh.config_matchers.not",

@@ -32,6 +32,7 @@ func TestServerShutdown(t *testing.T) {
 	l := newLocalListener()
 	testBytes := []byte("Hello world\n")
 	s := &Server{
+		noClientAuth: true,
 		Handler: func(s Session) {
 			s.Write(testBytes)
 			time.Sleep(50 * time.Millisecond)
@@ -85,6 +86,7 @@ func TestServerClose(t *testing.T) {
 		Handler: func(s Session) {
 			time.Sleep(5 * time.Second)
 		},
+		noClientAuth: true,
 	}
 	go func() {
 		err := s.Serve(l)

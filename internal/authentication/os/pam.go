@@ -1,18 +1,16 @@
 //go:build (darwin || linux || freebsd || netbsd) && cgo && pam
-// +build darwin linux freebsd netbsd
-// +build cgo
-// +build pam
 
 package osauth
 
 import (
 	"errors"
-	"os/user"
+
+	user "github.com/tweekmonster/luser"
 
 	"github.com/caddyserver/caddy/v2"
-	"github.com/mohammed90/caddy-ssh/internal/authentication"
-	"github.com/mohammed90/caddy-ssh/internal/session"
-	"github.com/msteinert/pam"
+	"github.com/kadeessh/kadeessh/internal/authentication"
+	"github.com/kadeessh/kadeessh/internal/session"
+	pam "github.com/msteinert/pam/v2"
 	"go.uber.org/zap"
 )
 
@@ -20,10 +18,15 @@ func init() {
 	caddy.RegisterModule(OS{})
 }
 
+// OS module authenticates the user against the users of the underlying operating system using PAM
 type OS struct {
 	logger *zap.Logger
 }
 
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (OS) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "ssh.authentication.providers.password.os",
@@ -31,11 +34,13 @@ func (OS) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision sets up the module
 func (pm *OS) Provision(ctx caddy.Context) error {
 	pm.logger = ctx.Logger(pm)
 	return nil
 }
 
+// AuthenticateUser uses PAM to authenticate users
 func (pm OS) AuthenticateUser(sshctx session.ConnMetadata, password []byte) (authentication.User, bool, error) {
 	pm.logger.Info("auth begin", zap.String("username", sshctx.User()))
 
@@ -49,12 +54,23 @@ func (pm OS) AuthenticateUser(sshctx session.ConnMetadata, password []byte) (aut
 		}
 	})
 	if err != nil {
-		pm.logger.Warn("error StartFunc", zap.Error(err))
+		pm.logger.Warn("error starting PAM transaction", zap.Error(err))
 		return nil, false, err
 	}
+	defer func() {
+		err = t.End()
+		if err != nil {
+			pm.logger.Warn("error closing PAM transaction", zap.Error(err))
+		}
+	}()
 	err = t.Authenticate(0)
 	if err != nil {
-		pm.logger.Warn("error Authenticate", zap.Error(err))
+		pm.logger.Warn("error PAM authentication", zap.Error(err))
+		return nil, false, err
+	}
+	err = t.AcctMgmt(0)
+	if err != nil {
+		pm.logger.Warn("error PAM account validation", zap.Error(err))
 		return nil, false, err
 	}
 	u, err := user.Lookup(sshctx.User())

@@ -73,6 +73,9 @@ type Server struct {
 	conns      map[*gossh.ServerConn]struct{}
 	connWg     sync.WaitGroup
 	doneChan   chan struct{}
+
+	// used for tests only
+	noClientAuth bool
 }
 
 func (srv *Server) ensureHostSigner() error {
@@ -126,9 +129,8 @@ func (srv *Server) config(ctx Context) *gossh.ServerConfig {
 	for _, signer := range srv.HostSigners {
 		config.AddHostKey(signer)
 	}
-	// set NoClientAuth to true if: (it is set to true) or ((all auth callbacks on the ServerConfig are nil) and (all auth callbacks on the *Server are nil))
-	// effectively, either it's set explicitly as true, or there's no auth config anywhere.
-	config.NoClientAuth = config.NoClientAuth || ((config.PasswordCallback == nil && config.PublicKeyCallback == nil && config.KeyboardInteractiveCallback == nil) && (srv.PasswordHandler == nil && srv.PublicKeyHandler == nil && srv.KeyboardInteractiveHandler == nil))
+
+	config.NoClientAuth = config.NoClientAuth || srv.noClientAuth
 	if srv.Version != "" {
 		config.ServerVersion = "SSH-2.0-" + srv.Version
 	}
@@ -292,7 +294,7 @@ func (srv *Server) HandleConn(newConn net.Conn) {
 
 	ctx.SetValue(ContextKeyConn, sshConn)
 	applyConnMetadata(ctx, sshConn)
-	//go gossh.DiscardRequests(reqs)
+	// go gossh.DiscardRequests(reqs)
 	go srv.handleRequests(ctx, reqs)
 	for ch := range chans {
 		handler := srv.ChannelHandlers[ch.ChannelType()]
@@ -369,8 +371,7 @@ func (srv *Server) SetOption(option Option) error {
 	// internal method. We can't actually lock here because if something calls
 	// (as an example) AddHostKey, it will deadlock.
 
-	//srv.mu.Lock()
-	//defer srv.mu.Unlock()
+	// defer srv.mu.Unlock()
 
 	return option(srv)
 }

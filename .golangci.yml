@@ -1,45 +1,84 @@
-linters-settings:
-  errcheck:
-    ignore: fmt:.*,io/ioutil:^Read.*,io:Copy
-    ignoretests: true
-  misspell:
-    locale: US
-
-linters:
-  enable:
-    - bodyclose
-    - prealloc
-    - unconvert
-    - errcheck
-    - gofmt
-    - goimports
-    - gosec
-    - ineffassign
-    - misspell
-
+version: "2"
 run:
-  # default concurrency is a available CPU number.
-  # concurrency: 4 # explicitly omit this value to fully utilize available resources.
-  skip-dirs:
-   # this is inherited from github.com/gliderlabs/ssh and changes are incremental
-    - "internal/ssh"
-    - "internal/adapter"
-  deadline: 5m
   issues-exit-code: 1
   tests: false
-
-# output configuration options
 output:
-  format: 'colored-line-number'
-  print-issued-lines: true
-  print-linter-name: true
-
+  formats:
+    text:
+      path: stdout
+      print-linter-name: true
+      print-issued-lines: true
+linters:
+  enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - copyloopvar
+    - decorder
+    - dogsled
+    - dupword
+    - durationcheck
+    - exhaustive
+    - gocritic
+    - gosec
+    - importas
+    - misspell
+    - prealloc
+    - promlinter
+    - sloglint
+    - sqlclosecheck
+    - testableexamples
+    - testifylint
+    - tparallel
+    - unconvert
+    - whitespace
+    - zerologlint
+  disable:
+    - dupl
+    - errname
+    - revive
+    - unparam
+    - unused
+    - wastedassign
+  settings:
+    errcheck:
+      exclude-functions:
+        - io.Copy
+        - fmt.*
+    exhaustive:
+      ignore-enum-types: reflect.Kind|svc.Cmd
+    misspell:
+      locale: US
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - gosec
+        text: G107
+    paths:
+      - internal/ssh/?.*
+      - internal/adapter
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  exclude-rules:
-    - text: "G107" # G107: Url provided to HTTP request as taint input
-      linters:
-        - gosec
-    # we're shelling out to known commands, not relying on user-defined input.
-    # - text: "G204" # G204: Audit use of command execution
-    #   linters:
-    #     - gosec
+  fix: true
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - internal/ssh/?.*
+      - internal/adapter
+      - third_party$
+      - builtin$
+      - examples$

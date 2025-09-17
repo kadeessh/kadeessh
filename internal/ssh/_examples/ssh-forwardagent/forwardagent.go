@@ -5,7 +5,7 @@ import (
 	"log"
 	"os/exec"
 
-	"github.com/mohammed90/caddy-ssh/internal/ssh"
+	"github.com/kadeessh/kadeessh/internal/ssh"
 )
 
 func main() {

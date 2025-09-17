@@ -2,14 +2,14 @@ package static
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
 	"github.com/caddyserver/caddy/v2"
-	"github.com/mohammed90/caddy-ssh/internal/authentication"
-	"github.com/mohammed90/caddy-ssh/internal/session"
-	"github.com/mohammed90/caddy-ssh/internal/ssh"
+	"github.com/kadeessh/kadeessh/internal/authentication"
+	"github.com/kadeessh/kadeessh/internal/session"
+	"github.com/kadeessh/kadeessh/internal/ssh"
 	"go.uber.org/zap"
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -24,6 +24,7 @@ var (
 )
 
 type User struct {
+	// the login username identifying the user
 	Username string `json:"username"`
 	// url to the location, e.g. file:///path/to/file or https://github.com/username.keys
 	Keys []string `json:"keys,omitempty"`
@@ -32,11 +33,16 @@ type User struct {
 }
 
 type StaticPublicKeyProvider struct {
+	// the user list along ith their keys sources
 	Users    []User          `json:"users,omitempty"`
 	userList map[string]User `json:"-"`
 	logger   *zap.Logger
 }
 
+// This method indicates that the type is a Caddy
+// module. The returned ModuleInfo must have both
+// a name and a constructor function. This method
+// must not have any side-effects.
 func (StaticPublicKeyProvider) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "ssh.authentication.providers.public_key.static",
@@ -44,12 +50,16 @@ func (StaticPublicKeyProvider) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision loads up the users' keys from the named sources, which may be https? or file.
+// TODO: modularize the source to allow arbitrary sources, e.g. Hashicorp Vault
 func (pk *StaticPublicKeyProvider) Provision(ctx caddy.Context) error {
 	pk.userList = make(map[string]User)
 	pk.logger = ctx.Logger(pk)
 	repl := caddy.NewReplacer()
 
 	t := &http.Transport{}
+	// The path is set by the server administrator, not by arbitrary user.
+	// nolint:gosec
 	t.RegisterProtocol("file", http.NewFileTransport(http.Dir("/")))
 	c := &http.Client{Transport: t}
 
@@ -66,7 +76,7 @@ func (pk *StaticPublicKeyProvider) Provision(ctx caddy.Context) error {
 				if err != nil {
 					return err
 				}
-				authKeysBytes, err = ioutil.ReadAll(res.Body)
+				authKeysBytes, err = io.ReadAll(res.Body)
 				if err != nil {
 					res.Body.Close()
 					return err
@@ -92,6 +102,8 @@ func (pk *StaticPublicKeyProvider) Provision(ctx caddy.Context) error {
 	return nil
 }
 
+// AuthenticateUser looks up the use in the in-memory map and grab the key to match against the presented key. It adds the key fingerprint
+// in the extensions of the permissions, keyed with "pubkey-fp".
 func (pk StaticPublicKeyProvider) AuthenticateUser(ctx session.ConnMetadata, pubkey gossh.PublicKey) (authentication.User, bool, error) {
 	username := ctx.User()
 	if username == "" {

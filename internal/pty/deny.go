@@ -2,7 +2,7 @@ package pty
 
 import (
 	"github.com/caddyserver/caddy/v2"
-	"github.com/mohammed90/caddy-ssh/internal/ssh"
+	"github.com/kadeessh/kadeessh/internal/ssh"
 	"go.uber.org/zap"
 )
 
@@ -12,6 +12,7 @@ func init() {
 	caddy.RegisterModule(Deny{})
 }
 
+// Allow is PtyAsker module which always rejects the PTY session
 type Deny struct {
 	logger *zap.Logger
 }
@@ -34,6 +35,7 @@ func (e *Deny) Provision(ctx caddy.Context) error {
 	return nil
 }
 
+// Provision sets up the Deny module
 func (e Deny) Allow(ctx ssh.Context, pty ssh.Pty) bool {
 	e.logger.Info(
 		"asking for permission",

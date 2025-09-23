@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, macos-latest]
-        go: [ '1.23' ]
+        go: [ '~1.25.0' ]
 
         # Set some variables per OS, usable via ${{ matrix.VAR }}
         # CADDY_BIN_PATH: the path to the compiled Caddy binary, for artifact publishing
@@ -41,7 +41,7 @@ jobs:
         check-latest: true
 
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Print Go version and environment
       id: vars
@@ -98,7 +98,8 @@ jobs:
       # id: step_test
       # continue-on-error: true
       run: |
-        go test -v -coverprofile="cover-profile.out" -short -race ./...
+        # go test -v -coverprofile="cover-profile.out" -short -race ./...
+        go test -v -short -race ./...
 
   goreleaser-check:
     runs-on: ubuntu-latest

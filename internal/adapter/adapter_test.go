@@ -11,9 +11,8 @@ import (
 )
 
 func TestAdapt(t *testing.T) {
-
 	// load the list of test files from the dir
-	files, err := filepath.Glob("./*.txt")
+	files, err := filepath.Glob(filepath.Join("testdata", "*.txt"))
 	if err != nil {
 		t.Errorf("failed to read caddyfile_adapt dir: %s", err)
 	}

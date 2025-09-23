@@ -1,0 +1,69 @@
+Port 2222
+ListenAddress 127.0.0.1
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+MaxAuthTries 6
+PubkeyAuthentication yes
+PasswordAuthentication no
+PermitEmptyPasswords no
+AllowTcpForwarding yes
+PermitTTY yes
+Subsystem sftp /usr/libexec/sftp-server
+
+----------
+
+{
+	"apps": {
+		"ssh": {
+			"servers": {
+				"srv0": {
+					"address": "127.0.0.1:2222",
+					"localforward": {
+						"forward": "allow"
+					},
+					"reverseforward": {
+						"forward": "allow"
+					},
+					"pty": {
+						"pty": "allow"
+					},
+					"subsystems": {
+						"sftp": {
+							"command": "/usr/libexec/sftp-server",
+							"handler": "command"
+						}
+					},
+					"configs": [
+						{
+							"config": {
+								"authentication": {
+									"public_key": {
+										"providers": {
+											"os": {}
+										}
+									}
+								},
+								"loader": "provided",
+								"max_auth_tries": 6,
+								"signer": {
+									"files": [
+										"/etc/ssh/ssh_host_rsa_key",
+										"/etc/ssh/ssh_host_ed25519_key"
+									],
+									"module": "file"
+								}
+							}
+						}
+					],
+					"actors": [
+						{
+							"act": {
+								"action": "shell"
+							}
+						}
+					]
+				}
+			}
+		}
+	}
+}

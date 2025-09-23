@@ -29,7 +29,7 @@ type Shell struct {
 	// the supplied command. It follows the OpenSSH semantics specified for
 	// the [`ForceCommand`](https://man.openbsd.org/OpenBSD-current/man5/sshd_config.5#ForceCommand) except for
 	// the part about `internal-sftp`.
-	ForceCommand string `json:"force_command"`
+	ForceCommand string `json:"force_command,omitempty"`
 
 	// environment variables to be set for the session
 	Env map[string]string `json:"env,omitempty"`

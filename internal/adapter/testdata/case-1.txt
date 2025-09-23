@@ -1,0 +1,29 @@
+passwordauthentication yes
+
+----------
+
+{
+	"apps": {
+		"ssh": {
+			"servers": {
+				"srv0": {
+					"address": "0.0.0.0:22",
+					"configs": [
+						{
+							"config": {
+								"authentication": {
+									"username_password": {
+										"providers": {
+											"os": {}
+										}
+									}
+								},
+								"loader": "provided"
+							}
+						}
+					]
+				}
+			}
+		}
+	}
+}

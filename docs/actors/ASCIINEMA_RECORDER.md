@@ -1,5 +1,11 @@
 # Asciinema Session Recording
 
+> **⚠️ Experimental.** This module is under active development. Its
+> configuration surface (option names, defaults, on-disk temp-file layout,
+> recovered storage key naming) and log field shapes may change in
+> backwards-incompatible ways. Do not build long-term automation against it
+> yet.
+
 The `asciinema_recorder` actor wraps other handlers to record SSH session output in asciinema cast v2 format. Recordings are automatically saved to Caddy storage for later playback and audit purposes.
 
 ## Features

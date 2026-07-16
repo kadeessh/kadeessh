@@ -53,6 +53,11 @@ func init() {
 // AsciinemaRecorder wraps another handler to record the SSH session output
 // in asciinema cast v2 format, which is then saved in Caddy storage.
 // Only output is captured for security reasons (no input/keystrokes).
+//
+// EXPERIMENTAL: this module is under active development. Its configuration
+// surface (option names, defaults, on-disk temp-file layout, recovered
+// storage key naming) and log field shapes may change without notice.
+// Do not rely on any of these for long-term automation yet.
 type AsciinemaRecorder struct {
 	// The wrapped handler that will handle the actual session
 	HandlerRaw json.RawMessage `json:"handler,omitempty" caddy:"namespace=ssh.actors inline_key=action"`

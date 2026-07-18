@@ -31,6 +31,19 @@ func (s Shell) openPty(sess session.Session) (sshPty, error) {
 		return nil, fmt.Errorf("ssh: not pty")
 	}
 	sessionId := sess.Context().Value(ssh.ContextKeySessionID).(string)
+
+	// Honor a per-key command="..." critical option from authorized_keys, but
+	// let a server-side ForceCommand take precedence.
+	forcedCommand := s.ForceCommand != "" && s.ForceCommand != "none"
+	if !forcedCommand {
+		if opts := sess.Permissions().CriticalOptions; opts != nil {
+			if cmd, ok := opts["command"]; ok && cmd != "" {
+				s.ForceCommand = cmd
+				forcedCommand = true
+			}
+		}
+	}
+
 	s.logger.Info("start pty session",
 		zap.String("term", ptyReq.Term),
 		zap.String("session_id", sessionId),
@@ -41,16 +54,12 @@ func (s Shell) openPty(sess session.Session) (sshPty, error) {
 		zap.Bool("force_pty", s.ForcePTY),
 		zap.Int("window_height", ptyReq.Window.Height),
 		zap.Int("window_width", ptyReq.Window.Width),
+	)
+	s.logger.Debug("session permissions",
+		zap.String("session_id", sessionId),
 		zap.Any("permissions", sess.Permissions()),
 	)
 
-	forcedCommand := s.ForceCommand != "" && s.ForceCommand != "none"
-	opts := sess.Permissions().CriticalOptions
-	if !forcedCommand && opts != nil {
-		if cmd, ok := opts["command"]; ok {
-			s.ForceCommand = cmd
-		}
-	}
 	args := []string{}
 	wantTTY := len(sess.RawCommand()) > 0
 	if wantTTY || forcedCommand {

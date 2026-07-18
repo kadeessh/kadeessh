@@ -3,7 +3,6 @@ package osauth
 import (
 	"os"
 	"path/filepath"
-	"strings"
 
 	user "github.com/tweekmonster/luser"
 
@@ -72,15 +71,7 @@ func (o *PublicKey) AuthenticateUser(ctx session.ConnMetadata, pubkey gossh.Publ
 			return account{}, false, err
 		}
 		if ssh.KeysEqual(key, pubkey) {
-			options, extensions := map[string]string{}, map[string]string{}
-			for _, v := range opts {
-				if strings.Contains(v, "=") {
-					optParts := strings.Split(v, "=")
-					options[optParts[0]] = optParts[len(optParts)-1] // in case someone is being silly with a value of `option=` (no value)
-					continue
-				}
-				extensions[v] = ""
-			}
+			criticalOptions, extensions := authentication.ParseAuthorizedKeyOptions(opts)
 			return account{
 				user: u,
 				metadata: map[string]any{
@@ -90,7 +81,7 @@ func (o *PublicKey) AuthenticateUser(ctx session.ConnMetadata, pubkey gossh.Publ
 					"pubkey":    string(pubkey.Marshal()),
 				},
 				permissions: &gossh.Permissions{
-					CriticalOptions: options,
+					CriticalOptions: criticalOptions,
 					Extensions:      extensions,
 				},
 			}, true, nil

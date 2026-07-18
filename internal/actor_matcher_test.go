@@ -123,6 +123,27 @@ func TestActorMatchers(t *testing.T) {
 				},
 				want: true,
 			},
+			{
+				name: "context without replacer does not panic",
+				ms: MatchExtension{
+					"permit-pty": {""},
+				},
+				args: fakeMatchingContext{
+					context: func() context.Context {
+						return context.Background()
+					},
+					permissions: func() ssh.Permissions {
+						return ssh.Permissions{
+							Permissions: &gossh.Permissions{
+								Extensions: map[string]string{
+									"permit-pty": "",
+								},
+							},
+						}
+					},
+				},
+				want: true,
+			},
 		},
 		"MatchCriticalOption": {
 			{
@@ -177,6 +198,27 @@ func TestActorMatchers(t *testing.T) {
 				args: fakeMatchingContext{
 					context: func() context.Context {
 						return context.WithValue(context.Background(), caddy.ReplacerCtxKey, caddy.NewReplacer())
+					},
+					permissions: func() ssh.Permissions {
+						return ssh.Permissions{
+							Permissions: &gossh.Permissions{
+								CriticalOptions: map[string]string{
+									"option-1": "match",
+								},
+							},
+						}
+					},
+				},
+				want: true,
+			},
+			{
+				name: "context without replacer does not panic",
+				ms: MatchCriticalOption{
+					"option-1": {"match"},
+				},
+				args: fakeMatchingContext{
+					context: func() context.Context {
+						return context.Background()
 					},
 					permissions: func() ssh.Permissions {
 						return ssh.Permissions{

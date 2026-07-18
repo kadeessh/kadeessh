@@ -323,7 +323,7 @@ func (m MatchExtension) ShouldAct(ctx session.ActorMatchingContext) bool {
 	// lifted from github.com/caddyserver/caddy/v2/modules/caddyhttp/matchers.go:matchHeaders with modifications
 
 	// TODO: embed replacers
-	repl := ctx.Context().Value(caddy.ReplacerCtxKey).(*caddy.Replacer)
+	repl, _ := ctx.Context().Value(caddy.ReplacerCtxKey).(*caddy.Replacer)
 	match := false
 	for ext, extval := range ctx.Permissions().Extensions {
 		for field, allowedFieldVals := range m {
@@ -388,7 +388,7 @@ func (m MatchCriticalOption) ShouldAct(ctx session.ActorMatchingContext) bool {
 	// lifted from github.com/caddyserver/caddy/v2/modules/caddyhttp/matchers.go:matchHeaders with modifications
 
 	// TODO: embed replacers
-	repl := ctx.Context().Value(caddy.ReplacerCtxKey).(*caddy.Replacer)
+	repl, _ := ctx.Context().Value(caddy.ReplacerCtxKey).(*caddy.Replacer)
 	match := false
 	for ext, extval := range ctx.Permissions().CriticalOptions {
 		for field, allowedFieldVals := range m {

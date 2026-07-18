@@ -48,7 +48,7 @@ type User interface {
 	HomeDir() string
 	GroupIDs() ([]string, error)
 	Groups() []Group
-	Metadata() map[string]interface{}
+	Metadata() map[string]any
 	Permissions() *gossh.Permissions
 }
 

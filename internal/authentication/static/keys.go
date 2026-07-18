@@ -120,14 +120,14 @@ func (pk StaticPublicKeyProvider) AuthenticateUser(ctx session.ConnMetadata, pub
 			return Account{
 				ID:    acc.Username,
 				Uname: acc.Username,
+				Custom: map[string]any{
+					"user": username,
+					// Record the public key used for authentication
+					"pubkey-fp": gossh.FingerprintSHA256(pubkey),
+				},
 				permissions: &gossh.Permissions{
-					CriticalOptions: map[string]string{
-						"user": username,
-					},
-					Extensions: map[string]string{
-						// Record the public key used for authentication
-						"pubkey-fp": gossh.FingerprintSHA256(pubkey),
-					},
+					CriticalOptions: map[string]string{},
+					Extensions:      map[string]string{},
 				},
 			}, true, nil
 		}

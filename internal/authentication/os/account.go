@@ -24,7 +24,7 @@ func (g group) Name() string {
 type account struct {
 	user        *user.User
 	permissions *gossh.Permissions
-	metadata    map[string]interface{}
+	metadata    map[string]any
 }
 
 func (a account) Uid() string {
@@ -61,7 +61,7 @@ func (a account) Groups() []authentication.Group {
 	return gs
 }
 
-func (a account) Metadata() map[string]interface{} {
+func (a account) Metadata() map[string]any {
 	return a.metadata
 }
 

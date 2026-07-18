@@ -41,7 +41,7 @@ type Account struct {
 	Home string `json:"home,omitempty"`
 
 	// Additional metadata for the user
-	Custom map[string]interface{} `json:"custom,omitempty"`
+	Custom map[string]any `json:"custom,omitempty"`
 
 	permissions    *gossh.Permissions
 	password, salt []byte
@@ -100,7 +100,7 @@ func (a Account) Groups() []authentication.Group {
 }
 
 // returns any custom metadata defined in the user record in the "custom" JSON field
-func (a Account) Metadata() map[string]interface{} {
+func (a Account) Metadata() map[string]any {
 	return a.Custom
 }
 

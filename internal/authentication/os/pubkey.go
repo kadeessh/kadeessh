@@ -3,6 +3,7 @@ package osauth
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	user "github.com/tweekmonster/luser"
 
@@ -66,22 +67,31 @@ func (o *PublicKey) AuthenticateUser(ctx session.ConnMetadata, pubkey gossh.Publ
 		return account{}, false, err
 	}
 	for len(authKeysBytes) > 0 {
-		key, _, _, rest, err := ssh.ParseAuthorizedKey(authKeysBytes)
+		key, _, opts, rest, err := ssh.ParseAuthorizedKey(authKeysBytes)
 		if err != nil {
 			return account{}, false, err
 		}
 		if ssh.KeysEqual(key, pubkey) {
+			options, extensions := map[string]string{}, map[string]string{}
+			for _, v := range opts {
+				if strings.Contains(v, "=") {
+					optParts := strings.Split(v, "=")
+					options[optParts[0]] = optParts[len(optParts)-1] // in case someone is being silly with a value of `option=` (no value)
+					continue
+				}
+				extensions[v] = ""
+			}
 			return account{
 				user: u,
+				metadata: map[string]any{
+					"user": username,
+					// Record the public key used for authentication
+					"pubkey-fp": gossh.FingerprintSHA256(pubkey),
+					"pubkey":    string(pubkey.Marshal()),
+				},
 				permissions: &gossh.Permissions{
-					CriticalOptions: map[string]string{
-						"user": username,
-					},
-					Extensions: map[string]string{
-						// Record the public key used for authentication
-						"pubkey-fp": gossh.FingerprintSHA256(pubkey),
-						"pubkey":    string(pubkey.Marshal()),
-					},
+					CriticalOptions: options,
+					Extensions:      extensions,
 				},
 			}, true, nil
 		}

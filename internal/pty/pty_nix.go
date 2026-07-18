@@ -41,11 +41,18 @@ func (s Shell) openPty(sess session.Session) (sshPty, error) {
 		zap.Bool("force_pty", s.ForcePTY),
 		zap.Int("window_height", ptyReq.Window.Height),
 		zap.Int("window_width", ptyReq.Window.Width),
+		zap.Any("permissions", sess.Permissions()),
 	)
 
+	forcedCommand := s.ForceCommand != "" && s.ForceCommand != "none"
+	opts := sess.Permissions().CriticalOptions
+	if !forcedCommand && opts != nil {
+		if cmd, ok := opts["command"]; ok {
+			s.ForceCommand = cmd
+		}
+	}
 	args := []string{}
 	wantTTY := len(sess.RawCommand()) > 0
-	forcedCommand := s.ForceCommand != "" && s.ForceCommand != "none"
 	if wantTTY || forcedCommand {
 		args = append(args, "-c")
 	}

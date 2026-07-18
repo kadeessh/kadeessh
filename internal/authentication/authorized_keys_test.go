@@ -9,10 +9,10 @@ import (
 
 func TestParseAuthorizedKeyOptions(t *testing.T) {
 	tests := []struct {
-		name             string
-		opts             []string
-		wantCritical     map[string]string
-		wantExtensions   map[string]string
+		name           string
+		opts           []string
+		wantCritical   map[string]string
+		wantExtensions map[string]string
 	}{
 		{
 			name:           "empty",

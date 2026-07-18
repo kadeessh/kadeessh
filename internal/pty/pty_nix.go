@@ -44,7 +44,8 @@ func (s Shell) openPty(sess session.Session) (sshPty, error) {
 		}
 	}
 
-	s.logger.Info("start pty session",
+	s.logger.Info(
+		"start pty session",
 		zap.String("term", ptyReq.Term),
 		zap.String("session_id", sessionId),
 		zap.String("remote_ip", sess.RemoteAddr().String()),
@@ -55,7 +56,8 @@ func (s Shell) openPty(sess session.Session) (sshPty, error) {
 		zap.Int("window_height", ptyReq.Window.Height),
 		zap.Int("window_width", ptyReq.Window.Width),
 	)
-	s.logger.Debug("session permissions",
+	s.logger.Debug(
+		"session permissions",
 		zap.String("session_id", sessionId),
 		zap.Any("permissions", sess.Permissions()),
 	)

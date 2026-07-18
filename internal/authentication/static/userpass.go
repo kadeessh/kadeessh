@@ -20,7 +20,7 @@ func init() {
 
 type Static struct {
 	// The algorithm with which the passwords are hashed. Default: bcrypt
-	HashRaw json.RawMessage `json:"hash,omitempty" caddy:"namespace=http.authentication.hashes inline_key=algorithm"`
+	HashRaw json.RawMessage `json:"hash,omitempty" caddy:"namespace=ssh.authentication.hashes inline_key=algorithm"`
 
 	// The list of accounts to authenticate.
 	Accounts []Account `json:"accounts,omitempty"`

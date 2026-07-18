@@ -4,6 +4,7 @@ import (
 	_ "github.com/kadeessh/kadeessh/internal"
 	_ "github.com/kadeessh/kadeessh/internal/actors"
 	_ "github.com/kadeessh/kadeessh/internal/authentication"
+	_ "github.com/kadeessh/kadeessh/internal/authentication/hashes"
 	_ "github.com/kadeessh/kadeessh/internal/authentication/os"
 	_ "github.com/kadeessh/kadeessh/internal/authentication/static"
 	_ "github.com/kadeessh/kadeessh/internal/authorization"

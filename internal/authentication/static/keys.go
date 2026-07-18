@@ -29,7 +29,14 @@ type User struct {
 	// url to the location, e.g. file:///path/to/file or https://github.com/username.keys
 	Keys []string `json:"keys,omitempty"`
 
-	sshKeys []ssh.PublicKey
+	sshKeys []authorizedKey
+}
+
+// authorizedKey is a parsed entry from a user's authorized_keys source, keeping
+// the option list alongside the key so it can be honored at authentication time.
+type authorizedKey struct {
+	key  ssh.PublicKey
+	opts []string
 }
 
 type StaticPublicKeyProvider struct {
@@ -86,13 +93,13 @@ func (pk *StaticPublicKeyProvider) Provision(ctx caddy.Context) error {
 				return fmt.Errorf("unsupported key source: %s", u.Scheme)
 			}
 
-			keys := []ssh.PublicKey{}
+			keys := []authorizedKey{}
 			for len(authKeysBytes) > 0 {
-				k, _, _, rest, err := ssh.ParseAuthorizedKey(authKeysBytes)
+				k, _, opts, rest, err := ssh.ParseAuthorizedKey(authKeysBytes)
 				if err != nil {
 					return err
 				}
-				keys = append(keys, k)
+				keys = append(keys, authorizedKey{key: k, opts: opts})
 				authKeysBytes = rest
 			}
 			user.sshKeys = append(user.sshKeys, keys...)
@@ -102,8 +109,10 @@ func (pk *StaticPublicKeyProvider) Provision(ctx caddy.Context) error {
 	return nil
 }
 
-// AuthenticateUser looks up the use in the in-memory map and grab the key to match against the presented key. It adds the key fingerprint
-// in the extensions of the permissions, keyed with "pubkey-fp".
+// AuthenticateUser looks up the user in the in-memory map and grabs the keys to match against
+// the presented key. On a match, any options carried on the authorized_keys entry (command=,
+// permitopen=, no-port-forwarding, etc.) are parsed into the returned session Permissions, and
+// the key fingerprint is recorded in the account's Custom metadata under "pubkey-fp".
 func (pk StaticPublicKeyProvider) AuthenticateUser(ctx session.ConnMetadata, pubkey gossh.PublicKey) (authentication.User, bool, error) {
 	username := ctx.User()
 	if username == "" {
@@ -115,19 +124,20 @@ func (pk StaticPublicKeyProvider) AuthenticateUser(ctx session.ConnMetadata, pub
 		return Account{}, false, nil // TODO: should report an error?
 	}
 
-	for _, key := range acc.sshKeys {
-		if ssh.KeysEqual(key, pubkey) {
+	for _, entry := range acc.sshKeys {
+		if ssh.KeysEqual(entry.key, pubkey) {
+			criticalOptions, extensions := authentication.ParseAuthorizedKeyOptions(entry.opts)
 			return Account{
 				ID:    acc.Username,
 				Uname: acc.Username,
+				Custom: map[string]any{
+					"user": username,
+					// Record the public key used for authentication
+					"pubkey-fp": gossh.FingerprintSHA256(pubkey),
+				},
 				permissions: &gossh.Permissions{
-					CriticalOptions: map[string]string{
-						"user": username,
-					},
-					Extensions: map[string]string{
-						// Record the public key used for authentication
-						"pubkey-fp": gossh.FingerprintSHA256(pubkey),
-					},
+					CriticalOptions: criticalOptions,
+					Extensions:      extensions,
 				},
 			}, true, nil
 		}

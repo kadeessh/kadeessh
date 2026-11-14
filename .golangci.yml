@@ -47,7 +47,9 @@ linters:
         - io.Copy
         - fmt.*
     exhaustive:
-      ignore-enum-types: reflect.Kind|svc.Cmd
+      ignore-types:
+        - reflect.Kind
+        - svc.Cmd
     misspell:
       locale: US
   exclusions:

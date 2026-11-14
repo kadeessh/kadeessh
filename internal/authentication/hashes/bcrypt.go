@@ -4,7 +4,7 @@
 //
 // This package exists so the shipped kadeessh binary can validate
 // bcrypt-hashed passwords out of the box without users having to build
-// a custom binary that includes caddy's HTTP-flavored caddyauth
+// a custom binary that includes caddy's HTTP-flavoured caddyauth
 // module. New hashers (scrypt, argon2, ...) belong here.
 package hashes
 

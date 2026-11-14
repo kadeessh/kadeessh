@@ -1,7 +1,11 @@
 package authentication
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/caddyserver/caddy/v2"
+	"github.com/kadeessh/kadeessh/internal/authentication/mfa"
 	"github.com/kadeessh/kadeessh/internal/session"
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -29,12 +33,48 @@ type Config struct {
 	// Interactive holds the configuration of the interactive-based
 	// authentication flow. nil value disables the authentication flow.
 	Interactive *InteractiveFlow `json:"interactive,omitempty"`
+
+	// MFARaw holds the configuration of the multi-factor authentication
+	// decorator. nil value disables MFA entirely — the primary flows
+	// grant a session on their own. An empty {} block enables MFA with
+	// sane defaults (TOTP + recovery codes, Caddy storage, 30d grace,
+	// sk-* satisfies MFA).
+	MFARaw json.RawMessage `json:"mfa,omitempty"`
+
+	mfa *mfa.Config `json:"-"`
+
+	// serverName scopes MFA records; set by the parent ProvidedConfig
+	// before Provision.
+	serverName string `json:"-"`
+}
+
+// BindServer records the SSH server name that owns this authentication
+// config. Called by the parent ProvidedConfig at provision time.
+func (c *Config) BindServer(name string) {
+	if c == nil {
+		return
+	}
+	c.serverName = name
 }
 
 // Provision sets up the allowed/denied users/groups and provisions the non-nil authentication flows
 func (c *Config) Provision(ctx caddy.Context) error {
 	if c == nil {
 		return nil
+	}
+
+	if len(c.MFARaw) > 0 {
+		// The MFA config module is loaded manually so its factor and
+		// store sub-modules resolve under their own namespaces.
+		mfaMod := new(mfa.Config)
+		if err := json.Unmarshal(c.MFARaw, mfaMod); err != nil {
+			return fmt.Errorf("unmarshalling mfa config: %w", err)
+		}
+		mfaMod.BindServer(c.serverName)
+		if err := mfaMod.Provision(ctx); err != nil {
+			return fmt.Errorf("provisioning mfa: %w", err)
+		}
+		c.mfa = mfaMod
 	}
 
 	// Source: https://linux.die.net/man/5/sshd_config
@@ -78,7 +118,7 @@ func (c Config) PasswordCallback(ctx session.Context) func(conn gossh.ConnMetada
 	if c.UsernamePassword == nil {
 		return nil
 	}
-	return func(conn gossh.ConnMetadata, password []byte) (*gossh.Permissions, error) {
+	primary := func(conn gossh.ConnMetadata, password []byte) (*gossh.Permissions, error) {
 		if subjectAllowedNotDenied(conn.User(), c.allowUsers, c.denyUsers) {
 			perms, err := c.UsernamePassword.callback(ctx)(conn, password)
 			if err != nil {
@@ -88,11 +128,16 @@ func (c Config) PasswordCallback(ctx session.Context) func(conn gossh.ConnMetada
 				if !groupAllowedNotDenied(u.Groups(), c.allowGroups, c.denyGroups) {
 					return nil, invalidCredentials
 				}
+				mfa.SetAuthenticatedUsername(ctx, u.Username())
 			}
 			return perms, nil
 		}
 		return nil, invalidCredentials
 	}
+	if c.mfa == nil {
+		return primary
+	}
+	return c.mfa.WrapPassword(ctx, primary)
 }
 
 // PublicKeyCallback returns an authentiction callback conforming to the public key authentication callback func needed
@@ -102,7 +147,7 @@ func (c Config) PublicKeyCallback(ctx session.Context) func(conn gossh.ConnMetad
 	if c.PublicKey == nil {
 		return nil
 	}
-	return func(conn gossh.ConnMetadata, key gossh.PublicKey) (*gossh.Permissions, error) {
+	primary := func(conn gossh.ConnMetadata, key gossh.PublicKey) (*gossh.Permissions, error) {
 		if subjectAllowedNotDenied(conn.User(), c.allowUsers, c.denyUsers) {
 			perms, err := c.PublicKey.callback(ctx)(conn, key)
 			if err != nil {
@@ -112,11 +157,16 @@ func (c Config) PublicKeyCallback(ctx session.Context) func(conn gossh.ConnMetad
 				if !groupAllowedNotDenied(u.Groups(), c.allowGroups, c.denyGroups) {
 					return nil, invalidCredentials
 				}
+				mfa.SetAuthenticatedUsername(ctx, u.Username())
 			}
 			return perms, nil
 		}
 		return nil, invalidCredentials
 	}
+	if c.mfa == nil {
+		return primary
+	}
+	return c.mfa.WrapPublicKey(ctx, primary)
 }
 
 // InteractiveCallback returns an authentiction callback conforming to the interactive authentication callback func needed
@@ -125,7 +175,7 @@ func (c Config) InteractiveCallback(ctx session.Context) func(conn gossh.ConnMet
 	if c.Interactive == nil {
 		return nil
 	}
-	return func(conn gossh.ConnMetadata, client gossh.KeyboardInteractiveChallenge) (*gossh.Permissions, error) {
+	primary := func(conn gossh.ConnMetadata, client gossh.KeyboardInteractiveChallenge) (*gossh.Permissions, error) {
 		if subjectAllowedNotDenied(conn.User(), c.allowUsers, c.denyUsers) {
 			perms, err := c.Interactive.callback(ctx)(conn, client)
 			if err != nil {
@@ -135,11 +185,16 @@ func (c Config) InteractiveCallback(ctx session.Context) func(conn gossh.ConnMet
 				if !groupAllowedNotDenied(u.Groups(), c.allowGroups, c.denyGroups) {
 					return nil, invalidCredentials
 				}
+				mfa.SetAuthenticatedUsername(ctx, u.Username())
 			}
 			return perms, nil
 		}
 		return nil, invalidCredentials
 	}
+	if c.mfa == nil {
+		return primary
+	}
+	return c.mfa.WrapInteractive(ctx, primary)
 }
 
 func subjectAllowedNotDenied(subject string, allowlist, denylist map[string]bool) bool {

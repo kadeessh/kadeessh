@@ -186,6 +186,9 @@ func (pc ProvidedConfig) CaddyModule() caddy.ModuleInfo {
 
 // Provision loads and provisions the dynamic modules of the config
 func (c *ProvidedConfig) Provision(ctx caddy.Context) error {
+	if serverName, ok := ctx.Value(CtxServerName).(string); ok {
+		c.Authentication.BindServer(serverName)
+	}
 	if err := c.Authentication.Provision(ctx); err != nil {
 		return err
 	}

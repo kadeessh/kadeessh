@@ -293,6 +293,25 @@ Runs the `go version` command for authenticated users, regardless of the command
 ```
 </details>
 
+## Multi-Factor Authentication (MFA)
+
+Kadeessh has a built-in MFA subsystem that decorates the existing primary auth flows (`public_key`, `password_auth`, `interactive`) with a second factor over `keyboard-interactive` — the same mechanism OpenSSH uses when `AuthenticationMethods publickey,keyboard-interactive` is configured. Every mainstream SSH client already handles this; no client-side changes are required.
+
+Turning it on is a single field under `authentication`:
+
+```json
+{
+  "authentication": {
+    "username_password": { "providers": { "static": { "accounts": [...] } } },
+    "mfa": {}
+  }
+}
+```
+
+The empty `"mfa": {}` block enables TOTP + one-time recovery codes with a 30-day grace period during which unenrolled logins emit a structured audit warning. Enrollment happens in-band via a keyboard-interactive wizard on first login, or via the `mfa_enroll` actor gated by the `mfa_status` matcher. Touch-required FIDO2 hardware keys (`sk-ssh-ed25519@openssh.com`, `sk-ecdsa-sha2-nistp256@openssh.com`) can skip the second factor when `sk_satisfies_mfa` is set; keys configured with `no-touch-required` cannot.
+
+See [docs/authentication/MFA.md](docs/authentication/MFA.md) for the full configuration reference, enrollment flow, storage layout, admin CLI, and security considerations.
+
 ## Reference
 
 - [OpenSSH Spec](https://www.openssh.com/specs.html)
